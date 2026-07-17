@@ -6,7 +6,6 @@ Plataforma web de apoyo al diagnóstico de osteoartritis de rodilla mediante an�
 Directora: Ing. Andrea del Pilar Rueda Olarte
 
 Integrantes:
-- Juan Camilo (tu nombre de repo)
 - Juan Luis Ardila Velasco
 - Juan Sebastián Álvarez Rodríguez
 - Karla Mariana Martínez Cedeño
