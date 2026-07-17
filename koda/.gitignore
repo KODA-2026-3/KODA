@@ -1,0 +1,32 @@
+# ==== General ====
+.env
+.DS_Store
+*.log
+
+# ==== Frontend (Angular / Node) ====
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/npm-debug.log*
+
+# ==== Backend (Java / Maven) ====
+backend/target/
+backend/.mvn/
+backend/*.class
+backend/HELP.md
+
+# ==== Inference (Python) ====
+inference/__pycache__/
+inference/**/__pycache__/
+inference/.venv/
+inference/venv/
+inference/*.pyc
+inference/saved_models/*.h5
+inference/saved_models/*.keras
+!inference/saved_models/.gitkeep
+
+# ==== IDE ====
+.idea/
+.vscode/*
+!frontend/.vscode/extensions.json
+*.iml

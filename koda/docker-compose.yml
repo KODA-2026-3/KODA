@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: koda-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: koda_db
+      POSTGRES_USER: koda_user
+      POSTGRES_PASSWORD: koda_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - koda_db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: koda-backend
+    restart: unless-stopped
+    depends_on:
+      - db
+      - inference
+    environment:
+      DB_USER: koda_user
+      DB_PASSWORD: koda_pass
+      INFERENCE_URL: http://inference:8000
+      JWT_SECRET: ${JWT_SECRET:-changeme_dev_secret_key_change_in_production}
+    ports:
+      - "8080:8080"
+
+  inference:
+    build: ./inference
+    container_name: koda-inference
+    restart: unless-stopped
+    volumes:
+      - ./inference/saved_models:/app/saved_models
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: koda-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - inference
+    ports:
+      - "4200:80"
+
+volumes:
+  koda_db_data:
