@@ -1,0 +1,33 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" routerLink="/dashboard/inicio" aria-label="KODA inicio">
+      <span class="brand-mark">K</span>
+      <span>KODA</span>
+    </a>
+    <div class="topbar-actions">
+      <span class="user-status">Sesion profesional</span>
+      <button type="button" class="logout-button" (click)="logout()" routerLink="/login">Cerrar sesion</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="sidebar" aria-label="Navegacion principal">
+      <p class="nav-label">Plataforma</p>
+      <nav>
+        <a routerLink="/dashboard/inicio" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        <a routerLink="/radiografias/carga" routerLinkActive="active">Cargar radiografia</a>
+        <a routerLink="/resultados/reportes" routerLinkActive="active">Resultados y reportes</a>
+      </nav>
+      <div class="sidebar-note">
+        <span class="status-dot"></span>
+        <span>Espacio de trabajo protegido</span>
+      </div>
+    </aside>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <footer class="footer">KODA <span aria-hidden="true">&middot;</span> Diagnostico asistido</footer>
+</div>

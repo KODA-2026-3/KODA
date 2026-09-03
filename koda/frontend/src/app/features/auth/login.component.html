@@ -1,0 +1,55 @@
+<main class="login-page">
+  <section class="brand-panel" aria-label="Informacion de KODA">
+    <div class="brand-lockup">
+      <span class="brand-icon" aria-hidden="true">&#10003;</span>
+      <span class="brand-name">KODA</span>
+    </div>
+    <div class="brand-copy">
+      <h1>Sistema de apoyo diagnóstico con inteligencia artificial</h1>
+      <p>Clasificación automática de severidad en artrosis de rodilla mediante la escala Kellgren-Lawrence a partir de radiografías digitales.</p>
+    </div>
+    <span class="brand-detail" aria-hidden="true">&#10003;</span>
+  </section>
+
+  <section class="form-panel">
+    <div class="form-content">
+      @if (errorMessage) {
+        <div class="alert" role="alert">
+          <span class="alert-icon" aria-hidden="true">!</span>
+          <div>
+            <strong>Error de autenticación</strong>
+            <span>{{ errorMessage }}</span>
+          </div>
+        </div>
+      }
+
+      <p class="eyebrow">Acceso seguro</p>
+      <h2>Iniciar sesión</h2>
+      <p class="intro">Acceda a su consola de análisis de radiología osteoarticular.</p>
+
+      <form (ngSubmit)="login()" #loginForm="ngForm">
+        <label for="email">Usuario (Correo institucional)</label>
+        <div class="input-wrap" [class.invalid]="emailControl.invalid && emailControl.touched">
+          <span aria-hidden="true">&#9993;</span>
+          <input id="email" name="email" type="email" [(ngModel)]="email" #emailControl="ngModel" required email autocomplete="username" placeholder="ejemplo@hospital.org" />
+        </div>
+
+        <label for="password">Contraseña</label>
+        <div class="input-wrap" [class.invalid]="passwordControl.invalid && passwordControl.touched">
+          <span aria-hidden="true">&#128274;</span>
+          <input id="password" name="password" [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" #passwordControl="ngModel" required autocomplete="current-password" placeholder="Ingrese su contraseña" />
+          <button class="show-password" type="button" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">{{ showPassword ? 'OCULTAR' : 'MOSTRAR' }} &#128065;</button>
+        </div>
+
+        <div class="form-options">
+          <label class="remember"><input type="checkbox" [(ngModel)]="rememberSession" name="rememberSession" /> <span>Recordar sesión</span></label>
+          <a routerLink="/login">¿Olvidó su contraseña?</a>
+        </div>
+
+        <button class="submit-button" type="submit" [disabled]="loginForm.invalid || isSubmitting">{{ isSubmitting ? 'Validando...' : 'Iniciar sesión' }}</button>
+      </form>
+
+      <p class="legal">KODA v2.0 · Uso exclusivo para profesionales de la salud autorizado.</p>
+    </div>
+  </section>
+</main>
