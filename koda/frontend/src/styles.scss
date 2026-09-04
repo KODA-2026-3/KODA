@@ -1,1 +1,64 @@
-/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply h-full;
+  }
+
+  body {
+    @apply bg-surface-muted font-sans text-navy-950 antialiased;
+  }
+}
+
+@layer components {
+  /* Botones */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold
+           transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy-400
+           focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-navy-700 text-white hover:bg-navy-800;
+  }
+  .btn-secondary {
+    @apply btn border border-surface-border bg-white text-navy-700 hover:bg-navy-50;
+  }
+  .btn-ghost {
+    @apply btn text-navy-700 hover:bg-navy-50;
+  }
+
+  /* Formularios */
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-navy-900;
+  }
+  .field-input {
+    @apply w-full rounded-lg border border-surface-border bg-white px-3.5 py-2.5 text-sm
+           text-navy-950 placeholder:text-slate-400 focus:border-navy-500 focus:outline-none
+           focus:ring-1 focus:ring-navy-500;
+  }
+  .field-input-error {
+    @apply border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-red-500;
+  }
+  .field-hint {
+    @apply mt-1.5 text-xs text-slate-500;
+  }
+  .field-error {
+    @apply mt-1.5 text-xs font-medium text-red-600;
+  }
+
+  /* Contenedores */
+  .card {
+    @apply rounded-xl border border-surface-border bg-white shadow-card;
+  }
+  .section-title {
+    @apply text-xs font-bold uppercase tracking-wider text-navy-700;
+  }
+
+  /* Etiquetas de estado */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+}

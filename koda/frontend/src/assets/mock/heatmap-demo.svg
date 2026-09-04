@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" width="400" height="480" role="img" aria-label="Mapa de calor Grad-CAM de demostración">
+  <defs>
+    <linearGradient id="hueso2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4b5563"/><stop offset="50%" stop-color="#d1d5db"/>
+      <stop offset="100%" stop-color="#4b5563"/>
+    </linearGradient>
+    <radialGradient id="calor"><stop offset="0%" stop-color="#ef4444" stop-opacity=".85"/>
+      <stop offset="45%" stop-color="#f59e0b" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></radialGradient>
+    <filter id="suave2"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="calorBlur"><feGaussianBlur stdDeviation="12"/></filter>
+  </defs>
+  <rect width="400" height="480" fill="#050608"/>
+  <g filter="url(#suave2)" fill="url(#hueso2)" opacity=".85">
+    <path d="M150 0h100v150c0 30 12 40 12 60H138c0-20 12-30 12-60Z"/>
+    <ellipse cx="163" cy="228" rx="34" ry="26"/><ellipse cx="237" cy="228" rx="34" ry="26"/>
+    <path d="M142 262h116l-8 40h-100Z"/><path d="M158 305h84v175h-84Z"/>
+    <path d="M252 300h22l10 180h-26Z" opacity=".8"/>
+  </g>
+  <g filter="url(#calorBlur)">
+    <circle cx="165" cy="245" r="62" fill="url(#calor)"/>
+    <circle cx="238" cy="250" r="52" fill="url(#calor)"/>
+  </g>
+  <text x="16" y="26" fill="#94a3b8" font-family="monospace" font-size="11">GRAD-CAM · DEMOSTRACIÓN</text>
+</svg>
