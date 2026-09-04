@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "koda-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "koda/frontend", "start"],
+      "port": 4200
+    }
+  ]
+}
