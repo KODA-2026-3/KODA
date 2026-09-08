@@ -25,7 +25,7 @@ export class LoginComponent {
   login(): void {
     if (!this.email || !this.password) { this.errorMessage = 'Completa ambos campos.'; return; }
     this.authService.setToken('pending-jwt-token');
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard/inicio';
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
     this.router.navigateByUrl(returnUrl);
   }
 }

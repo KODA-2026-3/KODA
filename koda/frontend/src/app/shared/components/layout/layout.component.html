@@ -1,6 +1,6 @@
 <div class="app-shell">
   <header class="topbar">
-    <a class="brand" routerLink="/dashboard/inicio" aria-label="KODA inicio">
+    <a class="brand" routerLink="/dashboard" aria-label="KODA inicio">
       <span class="brand-mark">K</span>
       <span>KODA</span>
     </a>
@@ -14,9 +14,9 @@
     <aside class="sidebar" aria-label="Navegacion principal">
       <p class="nav-label">Plataforma</p>
       <nav>
-        <a routerLink="/dashboard/inicio" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
-        <a routerLink="/radiografias/carga" routerLinkActive="active">Cargar radiografia</a>
-        <a routerLink="/resultados/reportes" routerLinkActive="active">Resultados y reportes</a>
+        <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+        <a routerLink="/analisis/cargar" routerLinkActive="active">Cargar radiografia</a>
+        <a routerLink="/reportes" routerLinkActive="active">Resultados y reportes</a>
       </nav>
       <div class="sidebar-note">
         <span class="status-dot"></span>
