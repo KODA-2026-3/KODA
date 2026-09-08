@@ -1,32 +1,90 @@
 import { Routes } from '@angular/router';
 
-import { authGuard } from './core/guards/auth.guard';
-import { LayoutComponent } from './shared/components/layout/layout.component';
+import { adminGuard, authGuard, invitadoGuard } from './core/guards/auth.guard';
+import { ShellComponent } from './layout/shell/shell.component';
 
 export const routes: Routes = [
-	{
-		path: 'login',
-		loadComponent: () => import('./features/auth/login.component').then((module) => module.LoginComponent)
-	},
-	{
-		path: '',
-		canActivate: [authGuard],
-		component: LayoutComponent,
-		children: [
-			{
-				path: 'dashboard/inicio',
-				loadComponent: () => import('./features/dashboard/dashboard.component').then((module) => module.DashboardComponent)
-			},
-			{
-				path: 'radiografias/carga',
-				loadComponent: () => import('./features/radiografias/radiografias.component').then((module) => module.RadiografiasComponent)
-			},
-			{
-				path: 'resultados/reportes',
-				loadComponent: () => import('./features/diagnostico/resultados.component').then((module) => module.ResultadosComponent)
-			},
-			{ path: '', pathMatch: 'full', redirectTo: 'dashboard/inicio' }
-		]
-	},
-	{ path: '**', redirectTo: 'login' }
+  { path: '', pathMatch: 'full', redirectTo: 'login' },
+  {
+    path: 'login',
+    canActivate: [invitadoGuard],
+    title: 'Iniciar sesión · KODA',
+    loadComponent: () => import('./features/auth/login/login.component').then((m) => m.LoginComponent)
+  },
+  {
+    path: 'recuperar',
+    title: 'Recuperar contraseña · KODA',
+    loadComponent: () =>
+      import('./features/auth/recuperar/recuperar-password.component').then(
+        (m) => m.RecuperarPasswordComponent
+      )
+  },
+  {
+    path: 'app',
+    component: ShellComponent,
+    canActivate: [authGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'cargar' },
+      {
+        path: 'cargar',
+        title: 'Cargar radiografía · KODA',
+        loadComponent: () =>
+          import('./features/diagnostico/cargar/cargar-radiografia.component').then(
+            (m) => m.CargarRadiografiaComponent
+          )
+      },
+      {
+        path: 'analizando',
+        title: 'Analizando radiografía · KODA',
+        loadComponent: () =>
+          import('./features/diagnostico/procesando/procesando.component').then(
+            (m) => m.ProcesandoComponent
+          )
+      },
+      {
+        path: 'resultado/:id',
+        title: 'Resultados del análisis · KODA',
+        loadComponent: () =>
+          import('./features/diagnostico/resultado/resultado.component').then(
+            (m) => m.ResultadoComponent
+          )
+      },
+      {
+        path: 'historial',
+        title: 'Historial de análisis · KODA',
+        loadComponent: () => import('./features/historial/historial.component').then((m) => m.HistorialComponent)
+      },
+      {
+        path: 'perfil',
+        title: 'Mi perfil · KODA',
+        loadComponent: () => import('./features/perfil/perfil.component').then((m) => m.PerfilComponent)
+      }
+    ]
+  },
+  {
+    path: 'admin',
+    component: ShellComponent,
+    canActivate: [authGuard, adminGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'medicos' },
+      {
+        path: 'medicos',
+        title: 'Gestión de médicos · KODA',
+        loadComponent: () => import('./features/admin/medicos/medicos.component').then((m) => m.MedicosComponent)
+      },
+      {
+        path: 'medicos/nuevo',
+        title: 'Crear cuenta de médico · KODA',
+        loadComponent: () =>
+          import('./features/admin/medicos/crear-medico.component').then((m) => m.CrearMedicoComponent)
+      },
+      {
+        path: 'configuracion',
+        title: 'Configuración · KODA',
+        loadComponent: () =>
+          import('./features/admin/configuracion/configuracion.component').then((m) => m.ConfiguracionComponent)
+      }
+    ]
+  },
+  { path: '**', redirectTo: 'login' }
 ];
