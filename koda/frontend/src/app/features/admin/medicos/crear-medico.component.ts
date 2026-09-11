@@ -152,7 +152,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
               </p>
             } @else {
               <div>
-                <label class="field-label" for="contrasena">Contraseña Temporal</label>
+                <label class="field-label" for="contrasena">Contraseña</label>
                 <div class="relative">
                   <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                     <app-icon name="lock" [size]="18" />
@@ -183,11 +183,8 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
                     </button>
                   </span>
                 </div>
-                <p class="field-hint">
-                  El médico deberá cambiar esta contraseña en su primer inicio de sesión.
-                </p>
                 @if (invalido('contrasenaTemporal')) {
-                  <p class="field-error">La contraseña temporal debe tener al menos 8 caracteres.</p>
+                  <p class="field-error">La contraseña debe tener al menos 8 caracteres.</p>
                 }
               </div>
             }
