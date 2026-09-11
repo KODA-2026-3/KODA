@@ -16,8 +16,6 @@ interface LoginResponse {
     correo: string;
     usuario: string;
     rol: RolUsuario;
-    matricula: string | null;
-    especialidad: string | null;
     institucion: string | null;
     iniciales: string;
   };
@@ -54,8 +52,6 @@ export class AuthService {
         correo: 'mgarcia@hospital.org',
         usuario: 'mgarcia',
         rol: 'MEDICO',
-        matricula: 'M.P. 48291',
-        especialidad: 'Radiología / Reumatología',
         institucion: 'Centro Médico de Diagnóstico',
         iniciales: 'MG'
       }
@@ -158,8 +154,6 @@ export class AuthService {
       correo: u.correo,
       usuario: u.usuario,
       rol: u.rol,
-      matricula: u.matricula ?? undefined,
-      especialidad: u.especialidad ?? undefined,
       institucion: u.institucion ?? undefined,
       iniciales: u.iniciales
     };

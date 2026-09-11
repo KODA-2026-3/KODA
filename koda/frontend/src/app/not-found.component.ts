@@ -1,14 +1,17 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { LogoKodaComponent } from './shared/components/logo/logo-koda.component';
+
 @Component({
   selector: 'app-not-found',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, LogoKodaComponent],
   template: `
     <main class="flex min-h-screen flex-col items-center justify-center bg-surface-muted px-6 text-center">
-      <p class="text-6xl font-extrabold tracking-tight text-navy-200">404</p>
+      <app-logo-koda class="mb-6" [size]="96" />
+      <p class="text-5xl font-extrabold tracking-tight text-navy-200">404</p>
       <h1 class="mt-4 text-2xl font-extrabold tracking-tight text-navy-950">
         Página no encontrada
       </h1>

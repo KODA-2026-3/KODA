@@ -1,11 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { CargaRadiografiaStore } from '../../../core/services/carga-radiografia.store';
+import { ConfiguracionService } from '../../../core/services/configuracion.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-
-const FORMATOS_ACEPTADOS = ['image/jpeg', 'image/png'];
-const TAMANO_MAXIMO_MB = 10;
 
 @Component({
   selector: 'app-cargar-radiografia',
@@ -59,12 +57,12 @@ const TAMANO_MAXIMO_MB = 10;
             #entrada
             type="file"
             class="sr-only"
-            accept="image/jpeg,image/png"
+            [attr.accept]="accept()"
             (change)="alSeleccionar($event)"
           />
 
           <p class="mt-5 text-xs text-slate-500">
-            Formatos aceptados: JPEG, PNG · Tamaño máximo: {{ tamanoMaximoMb }} MB
+            Formatos aceptados: {{ formatosLegibles() }} · Tamaño máximo: {{ tamanoMaximoMb() }} MB
           </p>
         </div>
 
@@ -112,8 +110,15 @@ const TAMANO_MAXIMO_MB = 10;
 export class CargarRadiografiaComponent {
   private readonly store = inject(CargaRadiografiaStore);
   private readonly router = inject(Router);
+  private readonly config = inject(ConfiguracionService).configuracion;
 
-  readonly tamanoMaximoMb = TAMANO_MAXIMO_MB;
+  readonly tamanoMaximoMb = computed(() => this.config().tamanoMaximoMb);
+  readonly formatosLegibles = computed(() =>
+    this.config()
+      .formatosAceptados.map((f) => (f === 'image/png' ? 'PNG' : 'JPEG'))
+      .join(', ')
+  );
+  readonly accept = computed(() => this.config().formatosAceptados.join(','));
   readonly archivo = this.store.archivo;
   readonly vistaPrevia = this.store.vistaPrevia;
   readonly error = signal<string | null>(null);
@@ -162,18 +167,18 @@ export class CargarRadiografiaComponent {
   }
 
   private validarYGuardar(archivo: File): void {
-    if (!FORMATOS_ACEPTADOS.includes(archivo.type)) {
+    if (!this.config().formatosAceptados.includes(archivo.type)) {
       this.store.limpiar();
       this.error.set(
-        'El formato del archivo no es compatible. Solo se aceptan imágenes JPEG o PNG.'
+        `El formato del archivo no es compatible. Solo se aceptan imágenes ${this.formatosLegibles()}.`
       );
       return;
     }
 
-    if (archivo.size > TAMANO_MAXIMO_MB * 1024 * 1024) {
+    if (archivo.size > this.tamanoMaximoMb() * 1024 * 1024) {
       this.store.limpiar();
       this.error.set(
-        `El archivo excede el tamaño máximo permitido (${TAMANO_MAXIMO_MB} MB). Por favor, seleccione un archivo más pequeño.`
+        `El archivo excede el tamaño máximo permitido (${this.tamanoMaximoMb()} MB). Por favor, seleccione un archivo más pequeño.`
       );
       return;
     }

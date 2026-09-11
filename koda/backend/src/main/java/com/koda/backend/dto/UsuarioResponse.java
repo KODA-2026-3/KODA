@@ -9,8 +9,6 @@ public record UsuarioResponse(
         String correo,
         String usuario,
         String rol,
-        String matricula,
-        String especialidad,
         String institucion,
         String iniciales) {
 
@@ -21,8 +19,6 @@ public record UsuarioResponse(
                 usuario.getCorreo(),
                 usuario.getUsuario(),
                 usuario.getRol().name(),
-                usuario.getMatricula(),
-                usuario.getEspecialidad(),
                 usuario.getInstitucion(),
                 usuario.getIniciales());
     }

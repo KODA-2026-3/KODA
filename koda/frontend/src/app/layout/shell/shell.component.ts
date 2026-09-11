@@ -3,6 +3,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 
 import { AuthService } from '../../core/services/auth.service';
 import { IconComponent, IconName } from '../../shared/components/icon/icon.component';
+import { LogoKodaComponent } from '../../shared/components/logo/logo-koda.component';
 
 interface ItemNavegacion {
   ruta: string;
@@ -15,7 +16,7 @@ interface ItemNavegacion {
   selector: 'app-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, IconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, IconComponent, LogoKodaComponent],
   template: `
     <div class="flex min-h-screen bg-surface-muted">
       <!-- Barra lateral -->
@@ -24,10 +25,7 @@ interface ItemNavegacion {
         [class.translate-x-0]="menuAbierto()"
       >
         <div class="flex items-center gap-3 px-6 py-6">
-          <span
-            class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-lg font-extrabold text-navy-900"
-            >K</span
-          >
+          <app-logo-koda [size]="40" />
           <span class="leading-tight">
             <span class="block text-lg font-extrabold tracking-tight text-white">KODA</span>
             <span class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-navy-300">
@@ -151,8 +149,7 @@ export class ShellComponent {
   readonly subtitulo = computed(() => {
     const u = this.usuario();
     if (!u) return '';
-    if (u.rol === 'ADMIN') return 'Administrador General';
-    return [u.especialidad, u.matricula].filter(Boolean).join(' · ');
+    return u.rol === 'ADMIN' ? 'Administrador General' : 'Profesional médico';
   });
 
   cerrarSesion(): void {

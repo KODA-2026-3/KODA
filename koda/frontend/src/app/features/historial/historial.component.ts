@@ -4,10 +4,9 @@ import { RouterLink } from '@angular/router';
 
 import { GradoKL } from '../../core/models/analisis.model';
 import { AnalisisService } from '../../core/services/analisis.service';
+import { ConfiguracionService } from '../../core/services/configuracion.service';
 import { BadgeKlComponent } from '../../shared/components/badge-kl/badge-kl.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
-
-const POR_PAGINA = 6;
 
 @Component({
   selector: 'app-historial',
@@ -88,7 +87,7 @@ const POR_PAGINA = 6;
       <!-- Tabla -->
       <div class="card mt-6 overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[860px] text-left">
+          <table class="w-full min-w-[680px] text-left">
             <caption class="sr-only">
               Análisis de osteoartritis realizados
             </caption>
@@ -96,7 +95,6 @@ const POR_PAGINA = 6;
               <tr class="border-b border-surface-border text-xs uppercase tracking-wider text-slate-500">
                 <th scope="col" class="px-5 py-3 font-bold">Miniatura</th>
                 <th scope="col" class="px-5 py-3 font-bold">ID / Fecha</th>
-                <th scope="col" class="px-5 py-3 font-bold">Paciente / Archivo</th>
                 <th scope="col" class="px-5 py-3 font-bold">Clasificación KL</th>
                 <th scope="col" class="px-5 py-3 font-bold">Confianza</th>
                 <th scope="col" class="px-5 py-3 font-bold">Acciones</th>
@@ -116,13 +114,6 @@ const POR_PAGINA = 6;
                     <p class="font-bold text-navy-700">#{{ a.id }}</p>
                     <p class="text-sm text-slate-500">{{ a.fecha }}</p>
                   </td>
-                  <td class="px-5 py-3">
-                    <p class="font-semibold text-navy-950">{{ a.paciente }}</p>
-                    <p class="text-sm text-slate-500">
-                      Rodilla {{ a.lateralidad === 'IZQUIERDA' ? 'izquierda' : 'derecha' }} ·
-                      {{ a.archivo }}
-                    </p>
-                  </td>
                   <td class="px-5 py-3"><app-badge-kl [grado]="a.grado" /></td>
                   <td class="px-5 py-3">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Confianza</p>
@@ -137,7 +128,7 @@ const POR_PAGINA = 6;
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="px-5 py-16 text-center text-sm text-slate-500">
+                  <td colspan="5" class="px-5 py-16 text-center text-sm text-slate-500">
                     No se encontraron análisis con los filtros seleccionados.
                   </td>
                 </tr>
@@ -204,6 +195,7 @@ const POR_PAGINA = 6;
 })
 export class HistorialComponent {
   private readonly servicio = inject(AnalisisService);
+  private readonly config = inject(ConfiguracionService).configuracion;
 
   readonly busqueda = signal('');
   readonly rango = signal('30');
@@ -227,12 +219,12 @@ export class HistorialComponent {
   });
 
   readonly totalPaginas = computed(() =>
-    Math.max(1, Math.ceil(this.filtrados().length / POR_PAGINA))
+    Math.max(1, Math.ceil(this.filtrados().length / this.config().analisisPorPagina))
   );
 
   readonly pagina = computed(() => {
-    const inicio = (this.paginaActual() - 1) * POR_PAGINA;
-    return this.filtrados().slice(inicio, inicio + POR_PAGINA);
+    const inicio = (this.paginaActual() - 1) * this.config().analisisPorPagina;
+    return this.filtrados().slice(inicio, inicio + this.config().analisisPorPagina);
   });
 
   readonly numerosPagina = computed(() =>
@@ -240,11 +232,11 @@ export class HistorialComponent {
   );
 
   readonly desde = computed(() =>
-    this.filtrados().length === 0 ? 0 : (this.paginaActual() - 1) * POR_PAGINA + 1
+    this.filtrados().length === 0 ? 0 : (this.paginaActual() - 1) * this.config().analisisPorPagina + 1
   );
 
   readonly hasta = computed(() =>
-    Math.min(this.paginaActual() * POR_PAGINA, this.filtrados().length)
+    Math.min(this.paginaActual() * this.config().analisisPorPagina, this.filtrados().length)
   );
 
   cambiarBusqueda(valor: string): void {

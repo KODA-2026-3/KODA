@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LogoKodaComponent } from '../../../shared/components/logo/logo-koda.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 
 interface Requisito {
@@ -22,7 +23,7 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
   selector: 'app-recuperar-password',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, IconComponent, ModalComponent],
+  imports: [ReactiveFormsModule, RouterLink, IconComponent, ModalComponent, LogoKodaComponent],
   template: `
     <div class="grid min-h-screen lg:grid-cols-[minmax(0,44%)_minmax(0,56%)]">
       <!-- Panel institucional -->
@@ -31,11 +32,7 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
       >
         <div class="relative">
           <div class="mb-16 flex items-center gap-3">
-            <span
-              class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white"
-            >
-              <app-icon name="shield-check" [size]="22" />
-            </span>
+            <app-logo-koda [size]="44" />
             <span class="text-xl font-extrabold tracking-tight">KODA</span>
           </div>
           <h1 class="text-5xl font-extrabold tracking-tight">KODA</h1>

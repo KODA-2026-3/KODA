@@ -157,79 +157,6 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
           </div>
         </section>
 
-        <!-- Configuración -->
-        <section class="mt-8 border-t border-surface-border pt-8">
-          <h2 class="section-title">Configuración de cuenta</h2>
-
-          <div class="mt-4 flex items-center justify-between gap-4">
-            <div>
-              <p class="text-sm font-semibold text-navy-950">Estado de la cuenta</p>
-              <p class="text-sm text-slate-500">Define si la cuenta puede acceder inmediatamente</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span
-                class="text-sm font-bold"
-                [class]="formulario.controls.activo.value ? 'text-emerald-600' : 'text-slate-500'"
-              >
-                {{ formulario.controls.activo.value ? 'Activo' : 'Inactivo' }}
-              </span>
-              <button
-                type="button"
-                role="switch"
-                [attr.aria-checked]="formulario.controls.activo.value"
-                aria-label="Estado de la cuenta"
-                class="relative h-7 w-12 rounded-full transition-colors"
-                [class]="formulario.controls.activo.value ? 'bg-emerald-500' : 'bg-slate-300'"
-                (click)="alternarActivo()"
-              >
-                <span
-                  class="absolute top-1 h-5 w-5 rounded-full bg-white transition-all"
-                  [class]="formulario.controls.activo.value ? 'left-6' : 'left-1'"
-                ></span>
-              </button>
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <label class="field-label" for="especialidad">Especialidad</label>
-            <div class="relative">
-              <select
-                id="especialidad"
-                formControlName="especialidad"
-                class="field-input appearance-none pr-10"
-                [class.field-input-error]="invalido('especialidad')"
-              >
-                <option value="">Seleccionar especialidad…</option>
-                @for (e of especialidades; track e) {
-                  <option [value]="e">{{ e }}</option>
-                }
-              </select>
-              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <app-icon name="chevron-down" [size]="16" />
-              </span>
-            </div>
-            <div class="mt-3 flex flex-wrap gap-2">
-              @for (e of especialidades; track e) {
-                <button
-                  type="button"
-                  class="rounded-md border border-surface-border px-3 py-1.5 text-xs font-medium transition-colors"
-                  [class]="
-                    formulario.controls.especialidad.value === e
-                      ? 'border-navy-500 bg-navy-50 text-navy-700'
-                      : 'bg-surface-muted text-slate-600 hover:bg-navy-50'
-                  "
-                  (click)="formulario.controls.especialidad.setValue(e)"
-                >
-                  {{ e }}
-                </button>
-              }
-            </div>
-            @if (invalido('especialidad')) {
-              <p class="field-error">Seleccione una especialidad.</p>
-            }
-          </div>
-        </section>
-
         <div class="mt-8 flex flex-col gap-3 border-t border-surface-border pt-6 sm:flex-row sm:justify-between">
           <a routerLink="/admin/medicos" class="btn-secondary px-6 py-2.5">Cancelar</a>
           <button type="submit" class="btn-primary px-6 py-2.5" [disabled]="guardando()">
@@ -264,7 +191,6 @@ export class CrearMedicoComponent {
   private readonly servicio = inject(MedicosService);
   private readonly router = inject(Router);
 
-  readonly especialidades = this.servicio.especialidades;
   readonly guardando = signal(false);
   readonly creado = signal(false);
   readonly verContrasena = signal(false);
@@ -276,18 +202,12 @@ export class CrearMedicoComponent {
     correo: ['', [Validators.required, Validators.email]],
     telefono: [''],
     usuario: ['', Validators.required],
-    contrasenaTemporal: ['', [Validators.required, Validators.minLength(8)]],
-    activo: [true],
-    especialidad: ['', Validators.required]
+    contrasenaTemporal: ['', [Validators.required, Validators.minLength(8)]]
   });
 
   invalido(campo: keyof typeof this.formulario.controls): boolean {
     const control = this.formulario.controls[campo];
     return control.invalid && (control.dirty || control.touched);
-  }
-
-  alternarActivo(): void {
-    this.formulario.controls.activo.setValue(!this.formulario.controls.activo.value);
   }
 
   /** Genera una contrasena temporal aleatoria que cumple los requisitos minimos. */
@@ -318,7 +238,7 @@ export class CrearMedicoComponent {
 
   volver(): void {
     this.creado.set(false);
-    this.formulario.reset({ activo: true });
+    this.formulario.reset();
     void this.router.navigate(['/admin/medicos']);
   }
 }

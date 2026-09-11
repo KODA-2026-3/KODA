@@ -10,6 +10,7 @@ import {
   GradoKL
 } from '../../../core/models/analisis.model';
 import { AnalisisService } from '../../../core/services/analisis.service';
+import { ConfiguracionService } from '../../../core/services/configuracion.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 type Vista = 'ORIGINAL' | 'HEATMAP';
@@ -245,6 +246,7 @@ export class ResultadoComponent {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly servicio = inject(AnalisisService);
+  private readonly config = inject(ConfiguracionService).configuracion;
 
   readonly grados: GradoKL[] = [0, 1, 2, 3, 4];
   readonly vistas: { valor: Vista; etiqueta: string }[] = [
@@ -253,7 +255,7 @@ export class ResultadoComponent {
   ];
   readonly circunferencia = 2 * Math.PI * 44;
 
-  readonly vista = signal<Vista>('ORIGINAL');
+  readonly vista = signal<Vista>(this.config().vistaPredeterminada);
   readonly zoom = signal(100);
 
   readonly analisis = toSignal<Analisis | undefined>(
@@ -295,14 +297,14 @@ export class ResultadoComponent {
   }
 
   textoConfianza(valor: number): string {
-    if (valor >= 85) return 'Confianza alta';
-    if (valor >= 65) return 'Confianza media';
+    if (valor >= this.config().umbralConfianzaAlta) return 'Confianza alta';
+    if (valor >= this.config().umbralConfianzaMedia) return 'Confianza media';
     return 'Confianza baja';
   }
 
   colorConfianza(valor: number): string {
-    if (valor >= 85) return 'text-emerald-700';
-    if (valor >= 65) return 'text-amber-600';
+    if (valor >= this.config().umbralConfianzaAlta) return 'text-emerald-700';
+    if (valor >= this.config().umbralConfianzaMedia) return 'text-amber-600';
     return 'text-red-600';
   }
 

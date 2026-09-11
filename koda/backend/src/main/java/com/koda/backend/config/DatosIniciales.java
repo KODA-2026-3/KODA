@@ -36,8 +36,6 @@ public class DatosIniciales {
                     "mgarcia",
                     encoder.encode(CONTRASENA_DEMO),
                     Rol.MEDICO,
-                    "M.P. 48291",
-                    "Radiología / Reumatología",
                     "Centro Médico de Diagnóstico"));
 
             repositorio.save(new Usuario(
@@ -46,8 +44,6 @@ public class DatosIniciales {
                     "cmendez",
                     encoder.encode(CONTRASENA_DEMO),
                     Rol.ADMIN,
-                    null,
-                    null,
                     "Hospital de Clínicas"));
 
             log.info("Cuentas de demostración creadas: mgarcia@hospital.org (MEDICO), cmendez@hospital.org (ADMIN)");

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="KODA">
+  <title>KODA</title>
+  <defs>
+    <g id="koda-hueso">
+      <rect x="78" y="12" width="38" height="86" rx="13" />
+      <ellipse cx="87" cy="95" rx="26" ry="22" />
+    </g>
+  </defs>
+  <g fill="none" stroke="#1E3A5F" stroke-width="13" stroke-linecap="round">
+    <path d="M213.8 105.1 A95 95 0 0 0 155.6 31.9" />
+    <path d="M84.4 31.9 A95 95 0 0 0 26.2 105.1" />
+    <path d="M26.2 134.9 A95 95 0 0 0 84.4 208.1" />
+    <path d="M155.6 208.1 A95 95 0 0 0 213.8 134.9" />
+  </g>
+  <use href="#koda-hueso" fill="#1E3A5F" />
+  <use href="#koda-hueso" fill="#1E3A5F" transform="translate(0,240) scale(1,-1)" />
+  <use href="#koda-hueso" fill="#AFCBE8" transform="translate(240,0) scale(-1,1)" />
+  <use href="#koda-hueso" fill="#AFCBE8" transform="translate(240,240) scale(-1,-1)" />
+  <circle cx="120" cy="120" r="21" fill="#F9A886" />
+</svg>

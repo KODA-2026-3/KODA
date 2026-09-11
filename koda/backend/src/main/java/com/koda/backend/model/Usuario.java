@@ -35,11 +35,6 @@ public class Usuario {
     @Column(nullable = false)
     private Rol rol;
 
-    /** Registro medico profesional; solo aplica al rol MEDICO. */
-    private String matricula;
-
-    private String especialidad;
-
     private String institucion;
 
     @Column(nullable = false)
@@ -50,14 +45,12 @@ public class Usuario {
     }
 
     public Usuario(String nombre, String correo, String usuario, String contrasena, Rol rol,
-                   String matricula, String especialidad, String institucion) {
+                   String institucion) {
         this.nombre = nombre;
         this.correo = correo;
         this.usuario = usuario;
         this.contrasena = contrasena;
         this.rol = rol;
-        this.matricula = matricula;
-        this.especialidad = especialidad;
         this.institucion = institucion;
     }
 
@@ -92,14 +85,6 @@ public class Usuario {
 
     public Rol getRol() {
         return rol;
-    }
-
-    public String getMatricula() {
-        return matricula;
-    }
-
-    public String getEspecialidad() {
-        return especialidad;
     }
 
     public String getInstitucion() {
