@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
   apiBaseUrl: '/api',
-  inferenceUrl: '/inference'
+  inferenceUrl: '/inferencia',
+  authMock: false
 };

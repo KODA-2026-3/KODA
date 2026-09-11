@@ -1,15 +1,17 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, invitadoGuard } from './core/guards/auth.guard';
-import { LayoutComponent } from './shared/components/layout/layout.component';
+import { adminGuard, authGuard, invitadoGuard } from './core/guards/auth.guard';
+import { ShellComponent } from './layout/shell/shell.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
+
   {
     path: 'login',
     canActivate: [invitadoGuard],
     title: 'Iniciar sesión · KODA',
-    loadComponent: () => import('./features/auth/login/login.component').then((m) => m.LoginComponent)
+    loadComponent: () =>
+      import('./features/auth/login/login.component').then((m) => m.LoginComponent)
   },
   {
     path: 'recuperar',
@@ -19,25 +21,94 @@ export const routes: Routes = [
         (m) => m.RecuperarPasswordComponent
       )
   },
+
+  // Módulo del profesional médico
   {
-    path: '',
-    component: LayoutComponent,
+    path: 'app',
+    component: ShellComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent) },
+      { path: '', pathMatch: 'full', redirectTo: 'cargar' },
       {
-        path: 'analisis/cargar',
+        path: 'cargar',
         title: 'Cargar radiografía · KODA',
         loadComponent: () =>
-          import('./features/radiografias/radiografias.component').then((m) => m.RadiografiasComponent)
+          import('./features/diagnostico/cargar/cargar-radiografia.component').then(
+            (m) => m.CargarRadiografiaComponent
+          )
       },
       {
-        path: 'reportes',
-        title: 'Resultados y reportes · KODA',
+        path: 'analizando',
+        title: 'Analizando radiografía · KODA',
         loadComponent: () =>
-          import('./features/diagnostico/resultados.component').then((m) => m.ResultadosComponent)
+          import('./features/diagnostico/procesando/procesando.component').then(
+            (m) => m.ProcesandoComponent
+          )
+      },
+      {
+        path: 'resultado/:id',
+        title: 'Resultados del análisis · KODA',
+        loadComponent: () =>
+          import('./features/diagnostico/resultado/resultado.component').then(
+            (m) => m.ResultadoComponent
+          )
+      },
+      {
+        path: 'historial',
+        title: 'Historial de análisis · KODA',
+        loadComponent: () =>
+          import('./features/historial/historial.component').then((m) => m.HistorialComponent)
+      },
+      {
+        path: 'perfil',
+        title: 'Mi perfil · KODA',
+        loadComponent: () =>
+          import('./features/perfil/perfil.component').then((m) => m.PerfilComponent)
       }
     ]
   },
-  { path: '**', loadComponent: () => import('./not-found.component').then((m) => m.NotFoundComponent) }
+
+  // Módulo administrativo
+  {
+    path: 'admin',
+    component: ShellComponent,
+    canActivate: [authGuard, adminGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'medicos' },
+      {
+        path: 'medicos',
+        title: 'Gestión de médicos · KODA',
+        loadComponent: () =>
+          import('./features/admin/medicos/medicos.component').then((m) => m.MedicosComponent)
+      },
+      {
+        path: 'medicos/nuevo',
+        title: 'Crear cuenta de médico · KODA',
+        loadComponent: () =>
+          import('./features/admin/medicos/crear-medico.component').then(
+            (m) => m.CrearMedicoComponent
+          )
+      },
+      {
+        path: 'configuracion',
+        title: 'Configuración · KODA',
+        loadComponent: () =>
+          import('./features/admin/configuracion/configuracion.component').then(
+            (m) => m.ConfiguracionComponent
+          )
+      }
+    ]
+  },
+
+  // URLs del andamiaje del Sprint 1: se conservan como redirecciones
+  // para no romper enlaces ya compartidos.
+  { path: 'dashboard', pathMatch: 'full', redirectTo: 'app/cargar' },
+  { path: 'analisis/cargar', pathMatch: 'full', redirectTo: 'app/cargar' },
+  { path: 'reportes', pathMatch: 'full', redirectTo: 'app/historial' },
+
+  {
+    path: '**',
+    title: 'Página no encontrada · KODA',
+    loadComponent: () => import('./not-found.component').then((m) => m.NotFoundComponent)
+  }
 ];

@@ -26,6 +26,9 @@ server:
     context-path: /api
 
 koda:
+  cors:
+    # Origenes autorizados del navegador; separar con coma para agregar mas.
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
   inference:
     url: ${INFERENCE_URL:http://localhost:8000}
   jwt:
