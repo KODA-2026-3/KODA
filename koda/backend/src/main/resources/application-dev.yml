@@ -1,26 +1,11 @@
-# Perfil de desarrollo: base H2 en memoria, sin dependencias externas.
-# Al reiniciar se pierde todo y DatosIniciales vuelve a sembrar las cuentas demo.
+# Perfil de desarrollo: PostgreSQL local (la conexion se define en application.yml).
+# Requiere la base koda_db en localhost:5432.
 logging:
   level:
     com.koda: DEBUG
     org.springframework.security: INFO
 
 spring:
-  datasource:
-    url: jdbc:h2:mem:koda;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-
   jpa:
-    hibernate:
-      ddl-auto: create-drop
     show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    open-in-view: false
