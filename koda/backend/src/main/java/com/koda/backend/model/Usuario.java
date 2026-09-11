@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
+
 /** Profesional o administrador autorizado para usar KODA. */
 @Entity
 @Table(name = "usuarios")
@@ -37,8 +39,14 @@ public class Usuario {
 
     private String institucion;
 
+    private String telefono;
+
     @Column(nullable = false)
     private boolean activo = true;
+
+    /** Ultimo inicio de sesion; nulo si la cuenta nunca entro. */
+    @Column(name = "ultimo_acceso")
+    private Instant ultimoAcceso;
 
     protected Usuario() {
         // requerido por JPA
@@ -97,5 +105,41 @@ public class Usuario {
 
     public void setActivo(boolean activo) {
         this.activo = activo;
+    }
+
+    public Instant getUltimoAcceso() {
+        return ultimoAcceso;
+    }
+
+    public void registrarAcceso() {
+        this.ultimoAcceso = Instant.now();
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
+
+    public void setUsuario(String usuario) {
+        this.usuario = usuario;
+    }
+
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
+    }
+
+    public void setInstitucion(String institucion) {
+        this.institucion = institucion;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
     }
 }

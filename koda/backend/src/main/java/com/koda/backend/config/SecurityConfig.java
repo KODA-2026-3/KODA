@@ -22,6 +22,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.koda.backend.security.JwtAuthenticationFilter;
 
+import jakarta.servlet.DispatcherType;
+
 /**
  * Cadena de seguridad: API sin estado, autenticada por JWT.
  * Las rutas de autenticacion y la documentacion quedan abiertas.
@@ -46,6 +48,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Los reenvios internos a /error llegan sin contexto de
+                        // seguridad: sin esto, un 403 o un 404 se responden como 401.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD)
+                        .permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/auth/**",
@@ -54,6 +60,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/h2-console/**")
                         .permitAll()
+                        .requestMatchers("/medicos/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

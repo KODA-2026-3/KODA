@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { Medico } from '../../../core/models/medico.model';
 import { MedicosService } from '../../../core/services/medicos.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { TiempoRelativoPipe } from '../../../shared/pipes/tiempo-relativo.pipe';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 
 const POR_PAGINA = 6;
@@ -13,7 +14,7 @@ const POR_PAGINA = 6;
   selector: 'app-medicos',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, IconComponent, ModalComponent],
+  imports: [FormsModule, RouterLink, IconComponent, ModalComponent, TiempoRelativoPipe],
   template: `
     <div class="mx-auto max-w-7xl">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -57,6 +58,19 @@ const POR_PAGINA = 6;
         </div>
       </div>
 
+      @if (error()) {
+        <div
+          class="mt-6 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3.5"
+          role="alert"
+        >
+          <span class="text-red-600"><app-icon name="alert-triangle" [size]="20" /></span>
+          <p class="flex-1 text-sm text-red-700">{{ error() }}</p>
+          <button type="button" class="btn-secondary px-3 py-1.5" (click)="cargar()">
+            Reintentar
+          </button>
+        </div>
+      }
+
       <!-- Tabla -->
       <div class="card mt-6 overflow-hidden">
         <div class="overflow-x-auto">
@@ -89,17 +103,16 @@ const POR_PAGINA = 6;
                   </td>
                   <td class="px-5 py-4 text-sm text-slate-600">{{ m.usuario }}</td>
                   <td class="px-5 py-4 text-sm text-slate-600">{{ m.correo }}</td>
-                  <td class="px-5 py-4 text-sm text-slate-600">{{ m.ultimoAcceso }}</td>
+                  <td class="px-5 py-4 text-sm text-slate-600">{{ m.ultimoAcceso | tiempoRelativo }}</td>
                   <td class="px-5 py-4">
                     <span class="flex items-center gap-3">
-                      <button
-                        type="button"
+                      <a
+                        [routerLink]="['/admin/medicos', m.id, 'editar']"
                         class="text-slate-500 hover:text-navy-700"
                         [attr.aria-label]="'Editar la cuenta de ' + m.nombre"
-                        (click)="editar(m)"
                       >
                         <app-icon name="pencil" [size]="18" />
-                      </button>
+                      </a>
                       <button
                         type="button"
                         class="text-red-500 hover:text-red-700"
@@ -114,7 +127,13 @@ const POR_PAGINA = 6;
               } @empty {
                 <tr>
                   <td colspan="5" class="px-5 py-16 text-center text-sm text-slate-500">
-                    No se encontraron médicos con los criterios seleccionados.
+                    @if (cargando()) {
+                      Cargando cuentas…
+                    } @else if (busqueda()) {
+                      No se encontraron médicos con los criterios seleccionados.
+                    } @else {
+                      Todavía no hay cuentas de médico registradas.
+                    }
                   </td>
                 </tr>
               }
@@ -195,9 +214,11 @@ const POR_PAGINA = 6;
     </app-modal>
   `
 })
-export class MedicosComponent {
+export class MedicosComponent implements OnInit {
   private readonly servicio = inject(MedicosService);
 
+  readonly cargando = signal(false);
+  readonly error = signal<string | null>(null);
   readonly busqueda = signal('');
   readonly paginaActual = signal(1);
   readonly porEliminar = signal<Medico | null>(null);
@@ -247,6 +268,22 @@ export class MedicosComponent {
     Math.min(this.paginaActual() * POR_PAGINA, this.filtrados().length)
   );
 
+  ngOnInit(): void {
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.cargando.set(true);
+    this.error.set(null);
+    this.servicio.listar().subscribe({
+      next: () => this.cargando.set(false),
+      error: (e: Error) => {
+        this.cargando.set(false);
+        this.error.set(e.message);
+      }
+    });
+  }
+
   cambiarBusqueda(valor: string): void {
     this.busqueda.set(valor);
     this.paginaActual.set(1);
@@ -256,10 +293,6 @@ export class MedicosComponent {
     this.paginaActual.set(Math.min(Math.max(1, pagina), this.totalPaginas()));
   }
 
-  editar(medico: Medico): void {
-    // Pendiente: pantalla de edición (misma estructura que "Crear Nueva Cuenta").
-  }
-
   confirmarEliminacion(medico: Medico): void {
     this.porEliminar.set(medico);
   }
@@ -267,9 +300,16 @@ export class MedicosComponent {
   eliminar(): void {
     const medico = this.porEliminar();
     if (!medico) return;
-    this.servicio.eliminar(medico.id).subscribe(() => {
-      this.porEliminar.set(null);
-      this.irA(this.paginaActual());
+
+    this.servicio.eliminar(medico.id).subscribe({
+      next: () => {
+        this.porEliminar.set(null);
+        this.irA(this.paginaActual());
+      },
+      error: (e: Error) => {
+        this.porEliminar.set(null);
+        this.error.set(e.message);
+      }
     });
   }
 }

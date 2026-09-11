@@ -30,12 +30,15 @@ public class AuthService {
      * Correo inexistente, contrasena incorrecta y cuenta desactivada
      * producen el mismo error, para no revelar que cuentas existen.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse authenticate(LoginRequest request) {
         Usuario usuario = repositorio.findByCorreoIgnoreCase(request.email())
                 .filter(u -> encoder.matches(request.password(), u.getContrasena()))
                 .filter(Usuario::isActivo)
                 .orElseThrow(CredencialesInvalidasException::new);
+
+        usuario.registrarAcceso();
+        repositorio.save(usuario);
 
         return new LoginResponse(
                 jwtService.generarToken(usuario),

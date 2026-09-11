@@ -90,6 +90,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'medicos/:id/editar',
+        title: 'Editar cuenta de médico · KODA',
+        loadComponent: () =>
+          import('./features/admin/medicos/crear-medico.component').then(
+            (m) => m.CrearMedicoComponent
+          )
+      },
+      {
         path: 'configuracion',
         title: 'Configuración · KODA',
         loadComponent: () =>
