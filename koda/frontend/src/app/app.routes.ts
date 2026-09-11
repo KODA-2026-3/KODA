@@ -96,14 +96,6 @@ export const routes: Routes = [
           import('./features/admin/medicos/crear-medico.component').then(
             (m) => m.CrearMedicoComponent
           )
-      },
-      {
-        path: 'configuracion',
-        title: 'Configuración · KODA',
-        loadComponent: () =>
-          import('./features/admin/configuracion/configuracion.component').then(
-            (m) => m.ConfiguracionComponent
-          )
       }
     ]
   },

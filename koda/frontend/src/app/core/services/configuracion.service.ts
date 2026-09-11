@@ -27,43 +27,19 @@ export const CONFIGURACION_POR_DEFECTO: ConfiguracionSistema = {
 };
 
 /**
- * Parametros de operacion del sistema, editables desde el modulo administrativo.
+ * Parametros de operacion que consumen la carga de radiografias, la lectura
+ * de resultados y el historial.
  *
- * Hoy se guardan en el navegador; cuando el backend exponga /api/configuracion
- * se reemplaza la persistencia sin cambiar la interfaz de los componentes que
- * la consumen.
+ * Hoy son de solo lectura: la pantalla que permitia editarlos se retiro del
+ * modulo administrativo. Se mantienen centralizados aqui, en vez de repartidos
+ * como constantes por cada pantalla, para que volver a exponerlos sea agregar
+ * la interfaz y no tocar la logica.
  */
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionService {
-  private readonly CLAVE = 'koda.configuracion';
-
-  private readonly _configuracion = signal<ConfiguracionSistema>(this.leer());
+  private readonly _configuracion = signal<ConfiguracionSistema>({
+    ...CONFIGURACION_POR_DEFECTO
+  });
 
   readonly configuracion = this._configuracion.asReadonly();
-
-  guardar(valores: ConfiguracionSistema): void {
-    this._configuracion.set(valores);
-    try {
-      localStorage.setItem(this.CLAVE, JSON.stringify(valores));
-    } catch {
-      /* almacenamiento no disponible: la configuración vive en memoria */
-    }
-  }
-
-  restablecer(): void {
-    this.guardar({ ...CONFIGURACION_POR_DEFECTO });
-  }
-
-  private leer(): ConfiguracionSistema {
-    try {
-      const bruto = localStorage.getItem(this.CLAVE);
-      // Se mezcla con los valores por defecto para tolerar configuraciones
-      // guardadas por versiones anteriores a las que les falten campos.
-      return bruto
-        ? { ...CONFIGURACION_POR_DEFECTO, ...(JSON.parse(bruto) as ConfiguracionSistema) }
-        : { ...CONFIGURACION_POR_DEFECTO };
-    } catch {
-      return { ...CONFIGURACION_POR_DEFECTO };
-    }
-  }
 }
