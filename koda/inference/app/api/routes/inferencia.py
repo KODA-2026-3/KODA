@@ -1,5 +1,6 @@
 """Endpoint de inferencia consumido por el backend (RestModuloIAAdapter)."""
 from fastapi import APIRouter, File, Request, UploadFile
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from app.config import settings
@@ -31,15 +32,20 @@ async def inferir(request: Request, imagen: UploadFile = File(...)) -> Respuesta
 
     radiografia = cargar_imagen(datos)
     clasificador = request.app.state.clasificador
-    prediccion = clasificador.predecir(radiografia)
 
-    return RespuestaInferencia(
-        gradoKL=prediccion.grado_kl,
-        probabilidades=prediccion.probabilidades,
-        confianza=prediccion.confianza,
-        heatmapBase64=superponer_heatmap(radiografia, prediccion.mapa_activacion),
-        modelo=clasificador.nombre,
-    )
+    # La inferencia ocupa la CPU varios segundos: fuera del hilo principal, para
+    # que el servicio siga atendiendo otras solicitudes (como /health) mientras tanto.
+    def analizar() -> RespuestaInferencia:
+        prediccion = clasificador.predecir(radiografia)
+        return RespuestaInferencia(
+            gradoKL=prediccion.grado_kl,
+            probabilidades=prediccion.probabilidades,
+            confianza=prediccion.confianza,
+            heatmapBase64=superponer_heatmap(radiografia, prediccion.mapa_activacion),
+            modelo=clasificador.nombre,
+        )
+
+    return await run_in_threadpool(analizar)
 
 
 __all__ = ["router", "ArchivoDemasiadoGrandeError", "ImagenInvalidaError"]

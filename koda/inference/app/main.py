@@ -21,6 +21,7 @@ log = logging.getLogger("koda.inference")
 async def ciclo_de_vida(app: FastAPI):
     # El modelo se carga una sola vez al arrancar, no en cada solicitud.
     app.state.clasificador = crear_clasificador(settings.modelo)
+    log.info("Clasificador activo: %s", app.state.clasificador.nombre)
     if settings.modelo == "simulado":
         log.warning(
             "Clasificador SIMULADO activo: las predicciones NO provienen de un modelo de IA."
