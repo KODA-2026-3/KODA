@@ -58,9 +58,12 @@ public class SecurityConfig {
                                 "/docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/h2-console/**")
+                                "/h2-console/**",
+                                "/actuator/health",
+                                "/actuator/health/**")
                         .permitAll()
                         .requestMatchers("/medicos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/predict").hasRole("MEDICO")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

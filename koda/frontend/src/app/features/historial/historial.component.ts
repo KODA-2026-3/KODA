@@ -30,8 +30,8 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
           <input
             type="search"
             class="field-input pl-11"
-            placeholder="Buscar por paciente o ID…"
-            aria-label="Buscar por paciente o ID"
+            placeholder="Buscar por ID o nombre de archivo…"
+            aria-label="Buscar por ID o nombre de archivo"
             [ngModel]="busqueda()"
             (ngModelChange)="cambiarBusqueda($event)"
           />
@@ -209,7 +209,6 @@ export class HistorialComponent {
     return this.servicio.analisis().filter((a) => {
       const coincideTexto =
         !texto ||
-        a.paciente.toLowerCase().includes(texto) ||
         a.id.toLowerCase().includes(texto) ||
         a.archivo.toLowerCase().includes(texto);
       const coincideGrado =

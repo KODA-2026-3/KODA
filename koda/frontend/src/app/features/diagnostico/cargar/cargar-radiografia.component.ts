@@ -64,6 +64,9 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
           <p class="mt-5 text-xs text-slate-500">
             Formatos aceptados: {{ formatosLegibles() }} · Tamaño máximo: {{ tamanoMaximoMb() }} MB
           </p>
+          <p class="mt-1 text-xs text-slate-500">
+            El nombre del archivo no debe contener datos del paciente.
+          </p>
         </div>
 
         <!-- Archivo cargado -->
@@ -121,7 +124,12 @@ export class CargarRadiografiaComponent {
   readonly accept = computed(() => this.config().formatosAceptados.join(','));
   readonly archivo = this.store.archivo;
   readonly vistaPrevia = this.store.vistaPrevia;
-  readonly error = signal<string | null>(null);
+  // Si el analisis anterior fallo, el motivo llega desde la pantalla de progreso.
+  readonly error = signal<string | null>(this.store.error());
+
+  constructor() {
+    this.store.descartarError();
+  }
   readonly arrastrando = signal(false);
 
   alArrastrar(evento: DragEvent, activo: boolean): void {

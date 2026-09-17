@@ -39,6 +39,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Health check (ADR-03) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Migraciones de esquema -->
         <dependency>
             <groupId>org.flywaydb</groupId>

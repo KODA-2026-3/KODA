@@ -11,6 +11,12 @@ spring:
     password: ${DB_PASSWORD:koda_pass}
     driver-class-name: org.postgresql.Driver
 
+  servlet:
+    multipart:
+      # Margen sobre los 10 MB del SRS para que el validador responda el mensaje propio.
+      max-file-size: 11MB
+      max-request-size: 12MB
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -28,6 +34,10 @@ spring:
 
 server:
   port: 8080
+  tomcat:
+    # Sin esto Tomcat corta la conexion ante un archivo demasiado grande y el
+    # navegador no recibe el mensaje de error (RF-02).
+    max-swallow-size: -1
   servlet:
     context-path: /api
 
@@ -36,10 +46,28 @@ koda:
     # Origenes autorizados del navegador; separar con coma para agregar mas.
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
   inference:
-    url: ${INFERENCE_URL:http://localhost:8000}
+    url: ${INFERENCE_URL:http://localhost:5000}
+    connect-timeout-ms: 3000
+    # Por debajo de los 30 s de RD-03 para responder antes del limite (ADR-02).
+    read-timeout-ms: ${INFERENCE_TIMEOUT_MS:25000}
+  analisis:
+    tamano-maximo: 10MB
   jwt:
     secret: ${JWT_SECRET:changeme_dev_secret_key_change_in_production}
     expiration-ms: 86400000
+
+management:
+  health:
+    # El endpoint es publico: el indicador de disco expondria rutas del servidor.
+    diskspace:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
 
 springdoc:
   api-docs:

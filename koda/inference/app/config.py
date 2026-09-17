@@ -1,14 +1,28 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "KODA Inference Service"
-    model_path: str = "saved_models/koda_kl_classifier.h5"
-    image_size: int = 224
-    kl_classes: int = 5  # grados 0-4 de la escala Kellgren-Lawrence
+    """Configuracion del servicio, sobreescribible con variables KODA_*."""
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_prefix="KODA_", env_file=".env", extra="ignore")
+
+    app_name: str = "KODA Inference Service"
+
+    # Clasificador activo. "simulado" no ejecuta ningun modelo real: existe
+    # para integrar y probar el flujo completo mientras se define el modelo.
+    modelo: str = "simulado"
+    ruta_modelo: str = "saved_models/DIKO.pth"
+
+    # Validaciones de entrada (RF-02 / RF-17 del SRS)
+    tamano_maximo_mb: int = 10
+    lado_minimo_px: int = 64
+    # Desviacion estandar minima en escala de grises: por debajo la imagen se
+    # considera uniforme (en negro, en blanco o vacia) y no se analiza.
+    desviacion_minima: float = 2.0
+
+    # El mapa de calor se reduce a este lado maximo para no enviar varios MB de
+    # Base64 por cada analisis (RD-03: respuesta en menos de 30 segundos).
+    lado_maximo_heatmap_px: int = 1024
 
 
 settings = Settings()
