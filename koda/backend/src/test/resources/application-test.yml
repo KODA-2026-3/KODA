@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:koda_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+koda:
+  jwt:
+    secret: clave_de_pruebas_koda_con_mas_de_32_bytes_de_longitud
+    expiration-ms: 86400000
+  inference:
+    url: http://localhost:59999
+
+logging:
+  level:
+    com.koda: INFO
+    org.springframework.security: WARN
