@@ -9,12 +9,13 @@ pydantic==2.7.1
 pydantic-settings==2.2.1
 python-dotenv==1.0.1
 
-# Framework del modelo: se agrega cuando se cierre la decision entre
-# TensorFlow/Keras (restriccion RDE-02 del SRS) y PyTorch (DIKO_Stage2,
-# modelo elegido en el Reporte de Seleccion). Mientras tanto el servicio
-# funciona con el clasificador simulado y no necesita ninguno de los dos.
-# tensorflow==2.16.1
-# keras==3.3.3
+# Framework del modelo: PyTorch, para DIKO_Stage2 (RDE-02 del SRS).
+# Versiones de la epoca en que se entreno y guardo el modelo (diciembre 2024,
+# Kaggle), para cargar el checkpoint original sin incompatibilidades.
+# Compilacion solo CPU: el proyecto no usa GPU (SRS 2.4).
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu
 
 # Pruebas
 pytest==8.2.1

@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from pathlib import Path
 
 from app.config import settings
 from app.models.base import ClasificadorKL, Prediccion
@@ -6,8 +7,15 @@ from app.models.simulado import ClasificadorSimulado
 
 
 def _crear_diko() -> ClasificadorKL:
-    # Importacion diferida: PyTorch solo se carga si se elige este modelo, asi el
-    # clasificador simulado sigue funcionando sin instalar requirements-diko.txt.
+    # Los pesos no se versionan: sin este aviso el servicio caeria al arrancar
+    # con un FileNotFoundError de PyTorch que no dice como generarlos.
+    if not Path(settings.ruta_modelo).exists():
+        raise FileNotFoundError(
+            f"No se encontro {settings.ruta_modelo}. Generarlo con "
+            "'python -m scripts.convertir_diko' o arrancar con KODA_MODELO=simulado."
+        )
+
+    # Importacion diferida: PyTorch solo se carga si se elige este modelo.
     from app.models.diko import ClasificadorDIKO
 
     return ClasificadorDIKO(settings.ruta_modelo)

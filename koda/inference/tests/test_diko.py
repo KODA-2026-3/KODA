@@ -14,7 +14,7 @@ from PIL import Image
 
 from app.config import settings
 
-pytest.importorskip("torch", reason="requirements-diko.txt no instalado")
+pytest.importorskip("torch", reason="PyTorch no instalado (requirements.txt)")
 pytestmark = pytest.mark.skipif(
     not Path(settings.ruta_modelo).exists(),
     reason=f"falta {settings.ruta_modelo}: ejecutar scripts/convertir_diko.py",

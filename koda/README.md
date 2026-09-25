@@ -19,7 +19,7 @@ Arquitectura de tres capas:
 koda/
 ├── frontend/     # Angular 17 — interfaz clínica
 ├── backend/      # Spring Boot 3.x — API REST, autenticación, persistencia
-├── inference/    # Python / TensorFlow-Keras — clasificación KL + Grad-CAM
+├── inference/    # Python / PyTorch — clasificación KL (DIKO_Stage2) + Grad-CAM
 ├── docs/         # Documentación del proyecto (SRS, anteproyecto, SPMP, etc.)
 └── docker-compose.yml
 ```
@@ -72,8 +72,12 @@ cd inference
 python3 -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m scripts.convertir_diko   # una sola vez: genera saved_models/diko_stage2_pesos.pt desde DIKO.pth
+uvicorn app.main:app --reload --port 5000
 ```
+
+Los pesos del modelo no se versionan (~200 MB). Para arrancar sin ellos, con el
+clasificador simulado: `KODA_MODELO=simulado`.
 
 ## Estructura interna
 

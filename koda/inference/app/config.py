@@ -8,8 +8,9 @@ class Settings(BaseSettings):
 
     app_name: str = "KODA Inference Service"
 
-    # Clasificador activo: "simulado" (no ejecuta ningun modelo real) o "diko".
-    modelo: str = "simulado"
+    # Clasificador activo: "diko" (DIKO_Stage2, PyTorch) o "simulado" (no
+    # ejecuta ningun modelo real; solo para pruebas sin el archivo de pesos).
+    modelo: str = "diko"
     # Archivo de solo pesos generado con scripts/convertir_diko.py.
     ruta_modelo: str = "saved_models/diko_stage2_pesos.pt"
 
