@@ -6,9 +6,6 @@ export interface Usuario {
   correo: string;
   usuario: string;
   rol: RolUsuario;
-  /** Registro médico profesional; solo aplica al rol MEDICO. */
-  matricula?: string;
-  especialidad?: string;
   institucion?: string;
   iniciales: string;
 }

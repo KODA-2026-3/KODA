@@ -30,7 +30,7 @@ koda/
 - JDK 17+
 - Python 3.11+
 - Docker y Docker Compose (opcional, para levantar todo junto)
-- PostgreSQL 16 (si no se usa Docker)
+- PostgreSQL 17 (si no se usa Docker)
 
 ## Puesta en marcha
 

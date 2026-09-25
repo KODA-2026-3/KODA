@@ -1,8 +1,11 @@
+# Perfil de desarrollo: PostgreSQL local (la conexion se define en application.yml).
+# Requiere la base koda_db en localhost:5432.
 logging:
   level:
     com.koda: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
 
 spring:
   jpa:
     show-sql: true
+    open-in-view: false

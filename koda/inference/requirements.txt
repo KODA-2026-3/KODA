@@ -1,17 +1,21 @@
+# Servicio de inferencia de KODA
 fastapi==0.111.0
 uvicorn[standard]==0.30.1
 python-multipart==0.0.9
-tensorflow==2.16.1
-keras==3.3.3
 numpy==1.26.4
 opencv-python-headless==4.10.0.82
 pillow==10.3.0
-scikit-learn==1.5.0
-matplotlib==3.9.0
 pydantic==2.7.1
 pydantic-settings==2.2.1
 python-dotenv==1.0.1
 
-# Testing
+# Framework del modelo: se agrega cuando se cierre la decision entre
+# TensorFlow/Keras (restriccion RDE-02 del SRS) y PyTorch (DIKO_Stage2,
+# modelo elegido en el Reporte de Seleccion). Mientras tanto el servicio
+# funciona con el clasificador simulado y no necesita ninguno de los dos.
+# tensorflow==2.16.1
+# keras==3.3.3
+
+# Pruebas
 pytest==8.2.1
 httpx==0.27.0

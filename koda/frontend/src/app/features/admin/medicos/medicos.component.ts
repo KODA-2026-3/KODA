@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { Medico } from '../../../core/models/medico.model';
 import { MedicosService } from '../../../core/services/medicos.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { TiempoRelativoPipe } from '../../../shared/pipes/tiempo-relativo.pipe';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 
 const POR_PAGINA = 6;
@@ -13,7 +14,7 @@ const POR_PAGINA = 6;
   selector: 'app-medicos',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, IconComponent, ModalComponent],
+  imports: [FormsModule, RouterLink, IconComponent, ModalComponent, TiempoRelativoPipe],
   template: `
     <div class="mx-auto max-w-7xl">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -30,7 +31,7 @@ const POR_PAGINA = 6;
       </div>
 
       <!-- Indicadores -->
-      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+      <div class="mt-6 grid gap-4 sm:max-w-xs">
         @for (kpi of indicadores(); track kpi.etiqueta) {
           <div class="card p-5">
             <p class="section-title">{{ kpi.etiqueta }}</p>
@@ -41,8 +42,8 @@ const POR_PAGINA = 6;
       </div>
 
       <!-- Filtros -->
-      <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-        <div class="relative flex-1">
+      <div class="mt-6">
+        <div class="relative">
           <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
             <app-icon name="search" [size]="18" />
           </span>
@@ -55,30 +56,25 @@ const POR_PAGINA = 6;
             (ngModelChange)="cambiarBusqueda($event)"
           />
         </div>
-        <div class="relative">
-          <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-            <app-icon name="filter" [size]="18" />
-          </span>
-          <select
-            class="field-input appearance-none pl-11 pr-10"
-            aria-label="Filtrar por estado"
-            [ngModel]="estado()"
-            (ngModelChange)="cambiarEstado($event)"
-          >
-            <option value="">Estado: Todos</option>
-            <option value="ACTIVO">Estado: Activos</option>
-            <option value="INACTIVO">Estado: Inactivos</option>
-          </select>
-          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-            <app-icon name="chevron-down" [size]="16" />
-          </span>
-        </div>
       </div>
+
+      @if (error()) {
+        <div
+          class="mt-6 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3.5"
+          role="alert"
+        >
+          <span class="text-red-600"><app-icon name="alert-triangle" [size]="20" /></span>
+          <p class="flex-1 text-sm text-red-700">{{ error() }}</p>
+          <button type="button" class="btn-secondary px-3 py-1.5" (click)="cargar()">
+            Reintentar
+          </button>
+        </div>
+      }
 
       <!-- Tabla -->
       <div class="card mt-6 overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[880px] text-left">
+          <table class="w-full min-w-[760px] text-left">
             <caption class="sr-only">
               Cuentas de médico registradas
             </caption>
@@ -88,7 +84,6 @@ const POR_PAGINA = 6;
                 <th scope="col" class="px-5 py-3.5 font-bold">Usuario</th>
                 <th scope="col" class="px-5 py-3.5 font-bold">Correo</th>
                 <th scope="col" class="px-5 py-3.5 font-bold">Último Acceso</th>
-                <th scope="col" class="px-5 py-3.5 font-bold">Estado</th>
                 <th scope="col" class="px-5 py-3.5 font-bold">Acciones</th>
               </tr>
             </thead>
@@ -108,41 +103,16 @@ const POR_PAGINA = 6;
                   </td>
                   <td class="px-5 py-4 text-sm text-slate-600">{{ m.usuario }}</td>
                   <td class="px-5 py-4 text-sm text-slate-600">{{ m.correo }}</td>
-                  <td class="px-5 py-4 text-sm text-slate-600">{{ m.ultimoAcceso }}</td>
-                  <td class="px-5 py-4">
-                    <span
-                      class="badge"
-                      [class]="
-                        m.estado === 'ACTIVO'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-200 text-slate-600'
-                      "
-                    >
-                      {{ m.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
-                    </span>
-                  </td>
+                  <td class="px-5 py-4 text-sm text-slate-600">{{ m.ultimoAcceso | tiempoRelativo }}</td>
                   <td class="px-5 py-4">
                     <span class="flex items-center gap-3">
-                      <button
-                        type="button"
+                      <a
+                        [routerLink]="['/admin/medicos', m.id, 'editar']"
                         class="text-slate-500 hover:text-navy-700"
                         [attr.aria-label]="'Editar la cuenta de ' + m.nombre"
-                        (click)="editar(m)"
                       >
                         <app-icon name="pencil" [size]="18" />
-                      </button>
-                      <button
-                        type="button"
-                        class="text-slate-500 hover:text-navy-700"
-                        [attr.aria-label]="
-                          (m.estado === 'ACTIVO' ? 'Desactivar' : 'Activar') +
-                          ' la cuenta de ' +
-                          m.nombre
-                        "
-                        (click)="alternarEstado(m)"
-                      >
-                        <app-icon name="shield-check" [size]="18" />
-                      </button>
+                      </a>
                       <button
                         type="button"
                         class="text-red-500 hover:text-red-700"
@@ -156,8 +126,14 @@ const POR_PAGINA = 6;
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="px-5 py-16 text-center text-sm text-slate-500">
-                    No se encontraron médicos con los criterios seleccionados.
+                  <td colspan="5" class="px-5 py-16 text-center text-sm text-slate-500">
+                    @if (cargando()) {
+                      Cargando cuentas…
+                    } @else if (busqueda()) {
+                      No se encontraron médicos con los criterios seleccionados.
+                    } @else {
+                      Todavía no hay cuentas de médico registradas.
+                    }
                   </td>
                 </tr>
               }
@@ -238,11 +214,12 @@ const POR_PAGINA = 6;
     </app-modal>
   `
 })
-export class MedicosComponent {
+export class MedicosComponent implements OnInit {
   private readonly servicio = inject(MedicosService);
 
+  readonly cargando = signal(false);
+  readonly error = signal<string | null>(null);
   readonly busqueda = signal('');
-  readonly estado = signal('');
   readonly paginaActual = signal(1);
   readonly porEliminar = signal<Medico | null>(null);
 
@@ -251,32 +228,23 @@ export class MedicosComponent {
       etiqueta: 'Médicos registrados',
       valor: this.servicio.totalRegistrados(),
       detalle: 'Cuentas totales'
-    },
-    {
-      etiqueta: 'Médicos activos',
-      valor: this.servicio.totalActivos(),
-      detalle: 'Sesiones habilitadas'
-    },
-    {
-      etiqueta: 'Médicos inactivos',
-      valor: this.servicio.totalInactivos(),
-      detalle: 'Acceso suspendido'
     }
   ]);
 
   readonly filtrados = computed(() => {
     const texto = this.busqueda().trim().toLowerCase();
-    const estadoSeleccionado = this.estado();
+    if (!texto) {
+      return this.servicio.medicos();
+    }
 
-    return this.servicio.medicos().filter((m) => {
-      const coincideTexto =
-        !texto ||
-        m.nombre.toLowerCase().includes(texto) ||
-        m.usuario.toLowerCase().includes(texto) ||
-        m.correo.toLowerCase().includes(texto);
-      const coincideEstado = !estadoSeleccionado || m.estado === estadoSeleccionado;
-      return coincideTexto && coincideEstado;
-    });
+    return this.servicio
+      .medicos()
+      .filter(
+        (m) =>
+          m.nombre.toLowerCase().includes(texto) ||
+          m.usuario.toLowerCase().includes(texto) ||
+          m.correo.toLowerCase().includes(texto)
+      );
   });
 
   readonly totalPaginas = computed(() =>
@@ -300,26 +268,29 @@ export class MedicosComponent {
     Math.min(this.paginaActual() * POR_PAGINA, this.filtrados().length)
   );
 
+  ngOnInit(): void {
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.cargando.set(true);
+    this.error.set(null);
+    this.servicio.listar().subscribe({
+      next: () => this.cargando.set(false),
+      error: (e: Error) => {
+        this.cargando.set(false);
+        this.error.set(e.message);
+      }
+    });
+  }
+
   cambiarBusqueda(valor: string): void {
     this.busqueda.set(valor);
     this.paginaActual.set(1);
   }
 
-  cambiarEstado(valor: string): void {
-    this.estado.set(valor);
-    this.paginaActual.set(1);
-  }
-
   irA(pagina: number): void {
     this.paginaActual.set(Math.min(Math.max(1, pagina), this.totalPaginas()));
-  }
-
-  alternarEstado(medico: Medico): void {
-    this.servicio.cambiarEstado(medico.id).subscribe();
-  }
-
-  editar(medico: Medico): void {
-    // Pendiente: pantalla de edición (misma estructura que "Crear Nueva Cuenta").
   }
 
   confirmarEliminacion(medico: Medico): void {
@@ -329,9 +300,16 @@ export class MedicosComponent {
   eliminar(): void {
     const medico = this.porEliminar();
     if (!medico) return;
-    this.servicio.eliminar(medico.id).subscribe(() => {
-      this.porEliminar.set(null);
-      this.irA(this.paginaActual());
+
+    this.servicio.eliminar(medico.id).subscribe({
+      next: () => {
+        this.porEliminar.set(null);
+        this.irA(this.paginaActual());
+      },
+      error: (e: Error) => {
+        this.porEliminar.set(null);
+        this.error.set(e.message);
+      }
     });
   }
 }

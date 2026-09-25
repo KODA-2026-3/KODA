@@ -1,0 +1,12 @@
+# Dependencias del clasificador DIKO_Stage2 (PyTorch). Solo se instalan si se
+# usa KODA_MODELO=diko; el clasificador simulado no las necesita.
+#
+# Versiones de la epoca en que se entreno y guardo el modelo (diciembre 2024,
+# Kaggle), para cargar el checkpoint original sin incompatibilidades.
+# Compilacion solo CPU: el proyecto no usa GPU (SRS 2.4).
+#
+# Instalacion:
+#   uv pip install --python .venv -r requirements-diko.txt --index-strategy unsafe-best-match
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu

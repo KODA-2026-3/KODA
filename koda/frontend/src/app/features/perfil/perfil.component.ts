@@ -31,7 +31,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
           </span>
           <div class="text-center sm:text-left">
             <p class="text-2xl font-extrabold tracking-tight text-navy-950">{{ u.nombre }}</p>
-            <p class="mt-1 text-sm text-slate-600">{{ u.especialidad }}</p>
+            <p class="mt-1 text-sm text-slate-600">{{ rolLegible(u.rol) }}</p>
             <span class="badge mt-3 bg-emerald-100 text-emerald-800">
               <app-icon name="shield-check" [size]="14" />
               Cuenta verificada
@@ -87,13 +87,16 @@ export class PerfilComponent {
 
   readonly usuario = this.auth.usuario;
 
+  rolLegible(rol: string): string {
+    return rol === 'ADMIN' ? 'Administrador General' : 'Profesional médico';
+  }
+
   datos(): { etiqueta: string; valor: string }[] {
     const u = this.usuario();
     if (!u) return [];
     return [
       { etiqueta: 'Nombre de usuario', valor: u.usuario },
       { etiqueta: 'Correo institucional', valor: u.correo },
-      { etiqueta: 'Registro profesional', valor: u.matricula ?? 'No registrado' },
       { etiqueta: 'Institución', valor: u.institucion ?? 'No registrada' }
     ];
   }

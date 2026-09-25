@@ -7,9 +7,11 @@ import {
   Analisis,
   DESCRIPCION_KL,
   ETIQUETAS_KL,
-  GradoKL
+  GradoKL,
+  MODELOS_SIN_VALIDEZ_CLINICA
 } from '../../../core/models/analisis.model';
 import { AnalisisService } from '../../../core/services/analisis.service';
+import { ConfiguracionService } from '../../../core/services/configuracion.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 type Vista = 'ORIGINAL' | 'HEATMAP';
@@ -31,6 +33,24 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
         <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-navy-950">
           Resultados del Análisis IA
         </h1>
+
+        @if (sinValidezClinica(a)) {
+          <div
+            class="mt-4 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3.5"
+            role="note"
+          >
+            <span class="mt-0.5 text-amber-600"><app-icon name="alert-triangle" [size]="20" /></span>
+            <p class="text-sm text-amber-900">
+              <strong>Resultado sin validez diagnóstica.</strong>
+              @if (a.modelo === 'simulado') {
+                El modelo de IA definitivo aún no está integrado: estos valores los genera un
+                clasificador simulado para probar la plataforma.
+              } @else {
+                Este es un registro de demostración.
+              }
+            </p>
+          </div>
+        }
 
         <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <!-- Visor -->
@@ -60,20 +80,22 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
                   [src]="vista() === 'ORIGINAL' ? a.imagenOriginal : a.heatmap"
                   [alt]="
                     vista() === 'ORIGINAL'
-                      ? 'Radiografía original de ' + a.paciente
-                      : 'Mapa de calor Grad-CAM de ' + a.paciente
+                      ? 'Radiografía original: ' + a.archivo
+                      : 'Mapa de calor Grad-CAM: ' + a.archivo
                   "
                   class="max-h-full origin-center transition-transform duration-200"
                   [style.transform]="'scale(' + zoom() / 100 + ')'"
                 />
               </div>
 
-              <span
-                class="absolute bottom-4 left-5 font-mono text-lg text-slate-300"
-                aria-hidden="true"
-              >
-                {{ a.lateralidad === 'IZQUIERDA' ? 'L' : 'R' }}
-              </span>
+              @if (a.lateralidad) {
+                <span
+                  class="absolute bottom-4 left-5 font-mono text-lg text-slate-300"
+                  aria-hidden="true"
+                >
+                  {{ a.lateralidad === 'IZQUIERDA' ? 'L' : 'R' }}
+                </span>
+              }
 
               <!-- Controles de zoom -->
               <div
@@ -109,7 +131,10 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
 
             <p class="mt-3 flex items-center gap-2 text-sm text-slate-600">
               <app-icon name="file-text" [size]="16" />
-              Rodilla {{ a.lateralidad === 'IZQUIERDA' ? 'izquierda' : 'derecha' }} · {{ a.archivo }}
+              @if (a.lateralidad) {
+                Rodilla {{ a.lateralidad === 'IZQUIERDA' ? 'izquierda' : 'derecha' }} ·
+              }
+              {{ a.archivo }}
             </p>
           </div>
 
@@ -236,6 +261,14 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
           médico.
         </p>
       </div>
+    } @else if (analisis() === null) {
+      <div class="mx-auto max-w-lg py-20 text-center">
+        <p class="text-lg font-bold text-navy-950">Este resultado ya no está disponible</p>
+        <p class="mt-2 text-sm text-slate-600">
+          Por ahora, un resultado solo puede consultarse durante la sesión en que se generó.
+        </p>
+        <a routerLink="/app/cargar" class="btn-primary mt-6 px-6 py-2.5">Nuevo análisis</a>
+      </div>
     } @else {
       <p class="py-20 text-center text-sm text-slate-500">Cargando resultados del análisis…</p>
     }
@@ -245,6 +278,7 @@ export class ResultadoComponent {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly servicio = inject(AnalisisService);
+  private readonly config = inject(ConfiguracionService).configuracion;
 
   readonly grados: GradoKL[] = [0, 1, 2, 3, 4];
   readonly vistas: { valor: Vista; etiqueta: string }[] = [
@@ -253,12 +287,18 @@ export class ResultadoComponent {
   ];
   readonly circunferencia = 2 * Math.PI * 44;
 
-  readonly vista = signal<Vista>('ORIGINAL');
+  readonly vista = signal<Vista>(this.config().vistaPredeterminada);
   readonly zoom = signal(100);
 
-  readonly analisis = toSignal<Analisis | undefined>(
-    this.ruta.paramMap.pipe(switchMap((p) => this.servicio.obtener(p.get('id') ?? '')))
+  /** undefined mientras carga; null si el analisis no existe. */
+  readonly analisis = toSignal<Analisis | null | undefined>(
+    this.ruta.paramMap.pipe(switchMap((p) => this.servicio.obtener(p.get('id') ?? ''))),
+    { initialValue: undefined }
   );
+
+  sinValidezClinica(analisis: Analisis): boolean {
+    return MODELOS_SIN_VALIDEZ_CLINICA.includes(analisis.modelo);
+  }
 
   ajustarZoom(delta: number): void {
     this.zoom.update((z) => Math.min(300, Math.max(50, z + delta)));
@@ -295,14 +335,14 @@ export class ResultadoComponent {
   }
 
   textoConfianza(valor: number): string {
-    if (valor >= 85) return 'Confianza alta';
-    if (valor >= 65) return 'Confianza media';
+    if (valor >= this.config().umbralConfianzaAlta) return 'Confianza alta';
+    if (valor >= this.config().umbralConfianzaMedia) return 'Confianza media';
     return 'Confianza baja';
   }
 
   colorConfianza(valor: number): string {
-    if (valor >= 85) return 'text-emerald-700';
-    if (valor >= 65) return 'text-amber-600';
+    if (valor >= this.config().umbralConfianzaAlta) return 'text-emerald-700';
+    if (valor >= this.config().umbralConfianzaMedia) return 'text-amber-600';
     return 'text-red-600';
   }
 

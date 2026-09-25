@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: koda-db
     restart: unless-stopped
     environment:
@@ -24,7 +24,7 @@ services:
     environment:
       DB_USER: koda_user
       DB_PASSWORD: koda_pass
-      INFERENCE_URL: http://inference:8000
+      INFERENCE_URL: http://inference:5000
       JWT_SECRET: ${JWT_SECRET:-changeme_dev_secret_key_change_in_production}
     ports:
       - "8080:8080"
@@ -36,7 +36,7 @@ services:
     volumes:
       - ./inference/saved_models:/app/saved_models
     ports:
-      - "8000:8000"
+      - "5000:5000"
 
   frontend:
     build: ./frontend

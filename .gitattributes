@@ -1,0 +1,18 @@
+# Normalización de fin de línea
+* text=auto
+
+# El wrapper de Maven es un script de shell: debe conservar LF
+# o falla en macOS y Linux con "bad interpreter".
+mvnw text eol=lf
+*.sh text eol=lf
+
+# Scripts de Windows
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binarios: sin conversión
+*.jpeg binary
+*.jpg binary
+*.png binary
+*.ico binary
+*.pdf binary

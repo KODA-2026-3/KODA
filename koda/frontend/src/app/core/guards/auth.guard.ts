@@ -3,8 +3,17 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = () => true;
+/** Exige sesion iniciada. */
+export const authGuard: CanActivateFn = (_ruta, estado) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
 
+  return auth.autenticado()
+    ? true
+    : router.createUrlTree(['/login'], { queryParams: { redirigir: estado.url } });
+};
+
+/** Exige sesion iniciada con rol administrador. */
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -14,6 +23,7 @@ export const adminGuard: CanActivateFn = () => {
     : router.createUrlTree([auth.autenticado() ? '/app/cargar' : '/login']);
 };
 
+/** Impide volver al login con una sesion activa. */
 export const invitadoGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
 import { AnalisisService } from '../../../core/services/analisis.service';
@@ -86,6 +87,7 @@ export class ProcesandoComponent implements OnInit, OnDestroy {
   private readonly store = inject(CargaRadiografiaStore);
   private readonly analisisService = inject(AnalisisService);
   private readonly router = inject(Router);
+  private readonly destruir = inject(DestroyRef);
 
   readonly duracionEstimada = DURACION_ESTIMADA_S;
   readonly circunferencia = 2 * Math.PI * 45;
@@ -114,11 +116,22 @@ export class ProcesandoComponent implements OnInit, OnDestroy {
       this.progreso.update((p) => (p < 95 ? p + 5 : p));
     }, 130);
 
-    this.analisisService.analizar(archivo).subscribe((analisis) => {
-      this.progreso.set(100);
-      this.store.limpiar();
-      void this.router.navigate(['/app/resultado', analisis.id]);
-    });
+    this.analisisService
+      .analizar(archivo)
+      .pipe(takeUntilDestroyed(this.destruir))
+      .subscribe({
+        next: (analisis) => {
+          this.progreso.set(100);
+          this.store.limpiar();
+          void this.router.navigate(['/app/resultado', analisis.id]);
+        },
+        // RF-17: el error se informa en la pantalla de carga, con el archivo
+        // todavia seleccionado para poder reintentar.
+        error: (error: Error) => {
+          this.store.registrarError(error.message);
+          void this.router.navigate(['/app/cargar']);
+        }
+      });
   }
 
   ngOnDestroy(): void {

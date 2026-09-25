@@ -4,12 +4,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LogoKodaComponent } from '../../../shared/components/logo/logo-koda.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, IconComponent],
+  imports: [ReactiveFormsModule, RouterLink, IconComponent, LogoKodaComponent],
   template: `
     <div class="grid min-h-screen lg:grid-cols-[minmax(0,44%)_minmax(0,56%)]">
       <!-- Panel institucional -->
@@ -27,11 +28,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
         </svg>
 
         <div class="relative">
-          <span
-            class="mb-8 flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white"
-          >
-            <app-icon name="shield-check" [size]="26" />
-          </span>
+          <app-logo-koda class="mb-8 block" [size]="88" />
           <h1 class="text-5xl font-extrabold tracking-tight">KODA</h1>
           <h2 class="mt-6 max-w-md text-xl font-semibold leading-snug text-navy-100">
             Sistema de apoyo diagnóstico con inteligencia artificial
