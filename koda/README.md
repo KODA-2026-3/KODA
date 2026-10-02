@@ -72,12 +72,16 @@ cd inference
 python3 -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python -m scripts.convertir_diko   # una sola vez: genera saved_models/diko_stage2_pesos.pt desde DIKO.pth
+python -m scripts.descargar_pesos  # una sola vez: genera saved_models/diko_stage2_pesos.pt
 uvicorn app.main:app --reload --port 5000
 ```
 
-Los pesos del modelo no se versionan (~200 MB). Para arrancar sin ellos, con el
-clasificador simulado: `KODA_MODELO=simulado`.
+Los pesos del modelo no se versionan (~200 MB). `descargar_pesos` baja `DIKO.pth`
+de la versión 9 del [notebook de los autores](https://www.kaggle.com/code/tahpvm/knee-osteoarthritis-classification)
+sin token, verifica su SHA-256 y lo convierte con `scripts/convertir_diko.py`
+(unos 30 s). La versión 10 del notebook publica otros pesos, con otros resultados:
+no usar "la última versión". Para arrancar sin pesos, con el clasificador
+simulado: `KODA_MODELO=simulado`.
 
 ## Evaluación del modelo
 
@@ -89,6 +93,7 @@ y verifica cada una contra la huella MD5 de `inference/datos/test_balanceado.csv
 
 ```bash
 cd inference
+python -m scripts.descargar_pesos      # si todavía no se hizo
 python -m scripts.evaluar_test --kaggle --lista datos/test_balanceado.csv
 ```
 

@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # Clasificador activo: "diko" (DIKO_Stage2, PyTorch) o "simulado" (no
     # ejecuta ningun modelo real; solo para pruebas sin el archivo de pesos).
     modelo: str = "diko"
-    # Archivo de solo pesos generado con scripts/convertir_diko.py.
+    # Archivo de solo pesos generado con scripts/descargar_pesos.py.
     ruta_modelo: str = "saved_models/diko_stage2_pesos.pt"
 
     # Validaciones de entrada (RF-02 / RF-17 del SRS)

@@ -12,7 +12,7 @@ def _crear_diko() -> ClasificadorKL:
     if not Path(settings.ruta_modelo).exists():
         raise FileNotFoundError(
             f"No se encontro {settings.ruta_modelo}. Generarlo con "
-            "'python -m scripts.convertir_diko' o arrancar con KODA_MODELO=simulado."
+            "'python -m scripts.descargar_pesos' o arrancar con KODA_MODELO=simulado."
         )
 
     # Importacion diferida: PyTorch solo se carga si se elige este modelo.
