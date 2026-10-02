@@ -138,7 +138,8 @@ export class ShellComponent {
   ];
 
   private readonly navAdmin: ItemNavegacion[] = [
-    { ruta: '/admin/medicos', etiqueta: 'Gestión de Médicos', icono: 'users' }
+    { ruta: '/admin/medicos', etiqueta: 'Gestión de Médicos', icono: 'users' },
+    { ruta: '/admin/historial', etiqueta: 'Historial de Radiografías', icono: 'file-text' }
   ];
 
   readonly navegacion = computed(() =>

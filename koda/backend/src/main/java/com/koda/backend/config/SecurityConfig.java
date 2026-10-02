@@ -63,6 +63,8 @@ public class SecurityConfig {
                                 "/actuator/health/**")
                         .permitAll()
                         .requestMatchers("/medicos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/analisis/mis-analisis").hasRole("MEDICO")
+                        .requestMatchers(HttpMethod.GET, "/analisis").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/predict").hasRole("MEDICO")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e

@@ -53,3 +53,15 @@ export const DESCRIPCION_KL: Record<GradoKL, string> = {
   3: 'Osteoartritis moderada',
   4: 'Osteoartritis severa'
 };
+
+/** Respuesta del endpoint GET /api/analisis. */
+export interface AnalisisResponse {
+  id: number;
+  nombreArchivo: string;
+  gradoKL: GradoKL;
+  confianza: number;
+  tiempoProcesamientoMs: number;
+  modelo: string;
+  fechaCreacion: string;
+  medicoNombre: string | null;
+}

@@ -96,6 +96,14 @@ export const routes: Routes = [
           import('./features/admin/medicos/crear-medico.component').then(
             (m) => m.CrearMedicoComponent
           )
+      },
+      {
+        path: 'historial',
+        title: 'Historial de radiografías · KODA',
+        loadComponent: () =>
+          import('./features/admin/historial/admin-historial.component').then(
+            (m) => m.AdminHistorialComponent
+          )
       }
     ]
   },
