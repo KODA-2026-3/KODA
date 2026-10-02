@@ -8,9 +8,19 @@ servicio, pero sin Grad-CAM y por lotes: el grado predicho es el mismo que
 devuelve /infer, en una fraccion del tiempo.
 
 Uso, desde koda/inference:
+    # Test balanceado (351 imagenes), descargadas de Kaggle sin token:
+    python -m scripts.evaluar_test --kaggle --lista datos/test_balanceado.csv
+
+    # Un split completo de una copia local del dataset:
     python -m scripts.evaluar_test --dataset C:\\ruta\\archive --split test
+
+Con --kaggle solo se descargan las imagenes de la lista (unos 6 MB para el
+test balanceado), a la cache de kagglehub (~/.cache/kagglehub). Una segunda
+corrida no vuelve a descargarlas.
 """
 import argparse
+import csv
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -32,19 +42,61 @@ def kappa_cuadratico(matriz: np.ndarray) -> float:
     return float(1 - (pesos * matriz).sum() / (pesos * esperada).sum())
 
 
+# Version fija: las mismas imagenes siempre, aunque el autor publique otra version.
+DATASET_KAGGLE = "shashwatwork/knee-osteoarthritis-dataset-with-severity/versions/1"
+
+
+def descargar_de_kaggle(filas: list[dict], split: str) -> list[tuple[Path, int]]:
+    """Descarga solo los archivos de la lista y verifica que sean los esperados."""
+    import kagglehub
+
+    muestras = []
+    for n, fila in enumerate(filas, 1):
+        relativa = f"{split}/{fila['grado']}/{fila['archivo']}"
+        # Una por una y con reintentos: sin token, Kaggle rechaza las rafagas de
+        # solicitudes anonimas (responde 404). Lo ya descargado sale de la cache.
+        for intento in range(5):
+            try:
+                ruta = Path(kagglehub.dataset_download(DATASET_KAGGLE, path=relativa))
+                break
+            except Exception:
+                if intento == 4:
+                    raise
+                time.sleep(2 ** intento)
+        # La huella confirma que Kaggle entrego exactamente la imagen de la lista.
+        if hashlib.md5(ruta.read_bytes()).hexdigest() != fila["md5"]:
+            raise RuntimeError(f"{fila['archivo']} no coincide con la huella de la lista")
+        muestras.append((ruta, int(fila["grado"])))
+        print(f"\r{n}/{len(filas)} descargadas", end="", flush=True)
+    print()
+    return muestras
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", required=True, type=Path)
+    origen = parser.add_mutually_exclusive_group(required=True)
+    origen.add_argument("--dataset", type=Path, help="copia local del dataset, con carpetas <split>/0..4")
+    origen.add_argument("--kaggle", action="store_true", help="descargar de Kaggle las imagenes de --lista")
+    parser.add_argument("--lista", type=Path, help="CSV archivo,grado,md5 con las imagenes a evaluar")
     parser.add_argument("--split", default="test")
     parser.add_argument("--lote", type=int, default=16)
     parser.add_argument("--salida", type=Path, help="archivo JSON con las metricas")
     args = parser.parse_args()
 
-    muestras = [
-        (ruta, grado)
-        for grado in range(NUMERO_GRADOS_KL)
-        for ruta in sorted((args.dataset / args.split / str(grado)).glob("*.png"))
-    ]
+    filas = list(csv.DictReader(args.lista.open(encoding="utf-8"))) if args.lista else None
+    if args.kaggle:
+        if filas is None:
+            parser.error("--kaggle requiere --lista")
+        print(f"Descargando {len(filas)} imagenes de Kaggle...")
+        muestras = descargar_de_kaggle(filas, args.split)
+    elif filas is not None:
+        muestras = [(args.dataset / args.split / f["grado"] / f["archivo"], int(f["grado"])) for f in filas]
+    else:
+        muestras = [
+            (ruta, grado)
+            for grado in range(NUMERO_GRADOS_KL)
+            for ruta in sorted((args.dataset / args.split / str(grado)).glob("*.png"))
+        ]
     print(f"{len(muestras)} imagenes en {args.split}")
 
     modelo = ClasificadorDIKO(settings.ruta_modelo)._modelo
@@ -85,6 +137,7 @@ def main() -> None:
     metricas = {
         "modelo": ClasificadorDIKO.nombre,
         "split": args.split,
+        "lista": args.lista.name if args.lista else None,
         "imagenes": int(len(reales)),
         "exactitud": float(aciertos.mean()),
         "exactitud_mas_menos_1": float((np.abs(reales - predichos) <= 1).mean()),

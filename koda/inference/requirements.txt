@@ -9,6 +9,9 @@ pydantic==2.7.1
 pydantic-settings==2.2.1
 python-dotenv==1.0.1
 
+# Descarga de las imagenes de prueba desde Kaggle (scripts/evaluar_test.py --kaggle)
+kagglehub==1.0.2
+
 # Framework del modelo: PyTorch, para DIKO_Stage2 (RDE-02 del SRS).
 # Versiones de la epoca en que se entreno y guardo el modelo (diciembre 2024,
 # Kaggle), para cargar el checkpoint original sin incompatibilidades.

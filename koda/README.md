@@ -79,6 +79,26 @@ uvicorn app.main:app --reload --port 5000
 Los pesos del modelo no se versionan (~200 MB). Para arrancar sin ellos, con el
 clasificador simulado: `KODA_MODELO=simulado`.
 
+## Evaluación del modelo
+
+Mide DIKO_Stage2 sobre el test balanceado: 351 radiografías, 75 por grado KL
+(51 de grado 4). No hace falta descargar el dataset ni tener cuenta de Kaggle:
+el script baja solo esas imágenes (unos 8 MB) del dataset público
+[Knee Osteoarthritis Dataset with Severity Grading](https://www.kaggle.com/datasets/shashwatwork/knee-osteoarthritis-dataset-with-severity)
+y verifica cada una contra la huella MD5 de `inference/datos/test_balanceado.csv`.
+
+```bash
+cd inference
+python -m scripts.evaluar_test --kaggle --lista datos/test_balanceado.csv
+```
+
+La primera corrida tarda unos 6 minutos en CPU: 3 a 4 de descarga, una imagen
+a la vez, y unos 3 de inferencia. Las imágenes quedan en `~/.cache/kagglehub`,
+así que las siguientes corridas no las vuelven a bajar. Resultado esperado:
+exactitud 65.5%, ±1 grado 95.4%, kappa cuadrático 0.876.
+
+Con una copia local del dataset: `--dataset <ruta> --split test`, con o sin `--lista`.
+
 ## Estructura interna
 
 **frontend/src/app**
