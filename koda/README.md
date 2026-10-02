@@ -28,7 +28,9 @@ koda/
 
 - Node.js 20+ y npm
 - JDK 17+
-- Python 3.11+
+- Python 3.11 para el servicio de inferencia (sirven 3.10 a 3.12). Con 3.13 o
+  más reciente `pip install` falla: numpy 1.26.4 y torch 2.5.1 no tienen
+  instaladores para esas versiones e intenta compilarlos.
 - Docker y Docker Compose (opcional, para levantar todo junto)
 - PostgreSQL 17 (si no se usa Docker)
 
@@ -69,12 +71,18 @@ mvn spring-boot:run     # http://localhost:8080/api
 **Inferencia**
 ```bash
 cd inference
-python3 -m venv .venv
+python3.11 -m venv .venv      # Windows: py -3.11 -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
+python --version              # debe decir 3.11.x
 pip install -r requirements.txt
 python -m scripts.descargar_pesos  # una sola vez: genera saved_models/diko_stage2_pesos.pt
 uvicorn app.main:app --reload --port 5000
 ```
+
+Sin Python 3.11 instalado, [uv](https://docs.astral.sh/uv/) lo descarga solo:
+`uv venv --python 3.11` y luego
+`uv pip install -r requirements.txt --index-strategy unsafe-best-match`
+(esa opción hace falta para que uv tome torch del índice de PyTorch).
 
 Los pesos del modelo no se versionan (~200 MB). `descargar_pesos` baja `DIKO.pth`
 de la versión 9 del [notebook de los autores](https://www.kaggle.com/code/tahpvm/knee-osteoarthritis-classification)
