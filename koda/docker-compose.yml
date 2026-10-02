@@ -22,6 +22,8 @@ services:
       - db
       - inference
     environment:
+      # Dentro del contenedor, localhost es el propio backend: la base es el servicio "db".
+      DB_URL: jdbc:postgresql://db:5432/koda_db
       DB_USER: koda_user
       DB_PASSWORD: koda_pass
       INFERENCE_URL: http://inference:5000
