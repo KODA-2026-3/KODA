@@ -17,6 +17,11 @@ spring:
       ddl-auto: validate
     show-sql: true
     open-in-view: false
+    # application.yml fija el dialecto de PostgreSQL: sin esto, Hibernate genera
+    # SQL que H2 rechaza (insert ... returning id) y no se puede guardar un analisis.
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
 
   h2:
     console:

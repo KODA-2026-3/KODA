@@ -1,6 +1,9 @@
 package com.koda.backend.model;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,7 +12,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** Registro de un analisis realizado. No contiene la imagen ni datos del paciente. */
+/**
+ * Registro de un analisis realizado. No contiene datos del paciente; la imagen,
+ * mientras se conserve, vive aparte en ImagenAnalisis.
+ */
 @Entity
 @Table(name = "metadatos_analisis")
 public class MetadatoAnalisis {
@@ -39,16 +45,22 @@ public class MetadatoAnalisis {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
+    /** Grados 0 a 4 separados por coma; nulo en los analisis anteriores a V5. */
+    @Column(name = "probabilidades")
+    private String probabilidades;
+
     protected MetadatoAnalisis() {
         // requerido por JPA
     }
 
     public MetadatoAnalisis(String usuarioId, String nombreArchivo, int gradoKL, double confianza,
-                            long tiempoProcesamientoMs, String modelo, LocalDateTime fechaCreacion) {
+                            List<Double> probabilidades, long tiempoProcesamientoMs, String modelo,
+                            LocalDateTime fechaCreacion) {
         this.usuarioId = usuarioId;
         this.nombreArchivo = nombreArchivo;
         this.gradoKL = gradoKL;
         this.confianza = confianza;
+        this.probabilidades = probabilidades.stream().map(String::valueOf).collect(Collectors.joining(","));
         this.tiempoProcesamientoMs = tiempoProcesamientoMs;
         this.modelo = modelo;
         this.fechaCreacion = fechaCreacion;
@@ -84,5 +96,13 @@ public class MetadatoAnalisis {
 
     public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
+    }
+
+    /** Lista vacia en los analisis anteriores a que se registraran las probabilidades. */
+    public List<Double> getProbabilidades() {
+        if (probabilidades == null || probabilidades.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(probabilidades.split(",")).map(Double::valueOf).toList();
     }
 }

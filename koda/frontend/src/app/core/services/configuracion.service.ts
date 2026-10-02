@@ -15,6 +15,8 @@ export interface ConfiguracionSistema {
   vistaPredeterminada: VistaResultado;
   /** Filas por página en el historial de análisis. */
   analisisPorPagina: number;
+  /** Días que se conservan las radiografías; debe coincidir con koda.analisis.retencion-dias del backend. */
+  diasRetencionImagenes: number;
 }
 
 export const CONFIGURACION_POR_DEFECTO: ConfiguracionSistema = {
@@ -23,7 +25,8 @@ export const CONFIGURACION_POR_DEFECTO: ConfiguracionSistema = {
   umbralConfianzaAlta: 85,
   umbralConfianzaMedia: 65,
   vistaPredeterminada: 'ORIGINAL',
-  analisisPorPagina: 6
+  analisisPorPagina: 6,
+  diasRetencionImagenes: 7
 };
 
 /**

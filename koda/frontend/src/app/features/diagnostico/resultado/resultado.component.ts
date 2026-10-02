@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 
 import {
@@ -20,7 +21,7 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
   selector: 'app-resultado',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, IconComponent],
+  imports: [DatePipe, RouterLink, IconComponent],
   template: `
     @if (analisis(); as a) {
       <div class="mx-auto max-w-7xl">
@@ -42,12 +43,8 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
             <span class="mt-0.5 text-amber-600"><app-icon name="alert-triangle" [size]="20" /></span>
             <p class="text-sm text-amber-900">
               <strong>Resultado sin validez diagnóstica.</strong>
-              @if (a.modelo === 'simulado') {
-                El modelo de IA definitivo aún no está integrado: estos valores los genera un
-                clasificador simulado para probar la plataforma.
-              } @else {
-                Este es un registro de demostración.
-              }
+              Estos valores los generó un clasificador simulado para probar la plataforma, no el
+              modelo de IA.
             </p>
           </div>
         }
@@ -55,6 +52,7 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
         <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <!-- Visor -->
           <div>
+            @if (a.imagenDisponible) {
             <div class="card grid grid-cols-2 gap-1 p-1.5" role="tablist" aria-label="Vista de la imagen">
               @for (opcion of vistas; track opcion.valor) {
                 <button
@@ -128,6 +126,20 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
                 </button>
               </div>
             </div>
+            } @else {
+              <div
+                class="card flex h-[480px] flex-col items-center justify-center gap-3 px-8 text-center"
+                role="note"
+              >
+                <span class="text-slate-400"><app-icon name="file-text" [size]="40" /></span>
+                <p class="font-bold text-navy-950">La radiografía ya no está guardada</p>
+                <p class="max-w-md text-sm text-slate-600">
+                  Las radiografías y sus mapas de calor se conservan {{ diasRetencion }} días
+                  después del análisis, o hasta que el médico las elimina. El resultado del análisis
+                  sigue disponible.
+                </p>
+              </div>
+            }
 
             <p class="mt-3 flex items-center gap-2 text-sm text-slate-600">
               <app-icon name="file-text" [size]="16" />
@@ -136,6 +148,26 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
               }
               {{ a.archivo }}
             </p>
+
+            @if (a.imagenDisponible) {
+              <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+                <span>
+                  La radiografía se conserva hasta el
+                  {{ a.imagenExpiraEn | date: 'dd/MM/yyyy HH:mm' }}.
+                </span>
+                <button
+                  type="button"
+                  class="btn-ghost px-3 py-1.5 text-red-600 hover:bg-red-50"
+                  [disabled]="eliminando()"
+                  (click)="eliminarImagen(a)"
+                >
+                  {{ eliminando() ? 'Eliminando…' : 'Eliminar radiografía' }}
+                </button>
+              </div>
+            }
+            @if (errorEliminar()) {
+              <p class="mt-2 text-sm text-red-600" role="alert">{{ errorEliminar() }}</p>
+            }
           </div>
 
           <!-- Panel de resultados -->
@@ -205,6 +237,11 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
 
             <section class="card p-6">
               <p class="section-title mb-4">Distribución por grado</p>
+              @if (a.distribucion.length === 0) {
+                <p class="text-sm text-slate-500">
+                  La distribución por grado no se registró para este análisis.
+                </p>
+              }
               <ul class="space-y-3">
                 @for (d of a.distribucion; track d.grado) {
                   <li>
@@ -263,9 +300,9 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
       </div>
     } @else if (analisis() === null) {
       <div class="mx-auto max-w-lg py-20 text-center">
-        <p class="text-lg font-bold text-navy-950">Este resultado ya no está disponible</p>
+        <p class="text-lg font-bold text-navy-950">No se encontró este análisis</p>
         <p class="mt-2 text-sm text-slate-600">
-          Por ahora, un resultado solo puede consultarse durante la sesión en que se generó.
+          Puede que no exista, que pertenezca a otra cuenta o que no se haya podido cargar.
         </p>
         <a routerLink="/app/cargar" class="btn-primary mt-6 px-6 py-2.5">Nuevo análisis</a>
       </div>
@@ -276,7 +313,6 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
 })
 export class ResultadoComponent {
   private readonly ruta = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly servicio = inject(AnalisisService);
   private readonly config = inject(ConfiguracionService).configuracion;
 
@@ -289,12 +325,42 @@ export class ResultadoComponent {
 
   readonly vista = signal<Vista>(this.config().vistaPredeterminada);
   readonly zoom = signal(100);
+  readonly diasRetencion = this.config().diasRetencionImagenes;
+  readonly eliminando = signal(false);
+  readonly errorEliminar = signal('');
 
   /** undefined mientras carga; null si el analisis no existe. */
-  readonly analisis = toSignal<Analisis | null | undefined>(
-    this.ruta.paramMap.pipe(switchMap((p) => this.servicio.obtener(p.get('id') ?? ''))),
-    { initialValue: undefined }
-  );
+  readonly analisis = signal<Analisis | null | undefined>(undefined);
+
+  constructor() {
+    this.ruta.paramMap
+      .pipe(
+        switchMap((p) => this.servicio.obtener(p.get('id') ?? '')),
+        takeUntilDestroyed()
+      )
+      .subscribe((analisis) => this.analisis.set(analisis));
+  }
+
+  eliminarImagen(analisis: Analisis): void {
+    const confirmado = window.confirm(
+      'Se eliminarán la radiografía y su mapa de calor. El resultado del análisis se conserva. ¿Continuar?'
+    );
+    if (!confirmado) {
+      return;
+    }
+    this.eliminando.set(true);
+    this.errorEliminar.set('');
+    this.servicio.eliminarImagen(analisis.id).subscribe({
+      next: () => {
+        this.analisis.set(this.servicio.sinImagenes(analisis));
+        this.eliminando.set(false);
+      },
+      error: (e: Error) => {
+        this.errorEliminar.set(e.message);
+        this.eliminando.set(false);
+      }
+    });
+  }
 
   sinValidezClinica(analisis: Analisis): boolean {
     return MODELOS_SIN_VALIDEZ_CLINICA.includes(analisis.modelo);

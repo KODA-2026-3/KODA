@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -12,13 +13,13 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
   selector: 'app-historial',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, IconComponent, BadgeKlComponent],
+  imports: [DatePipe, FormsModule, RouterLink, IconComponent, BadgeKlComponent],
   template: `
     <div class="mx-auto max-w-7xl">
       <h1 class="text-3xl font-extrabold tracking-tight text-navy-950">Historial de Análisis</h1>
       <p class="mt-2 text-sm text-slate-600">
-        Visualice, filtre y descargue los reportes de análisis de osteoartritis realizados
-        previamente.
+        Visualice y filtre los análisis de osteoartritis realizados previamente. Las radiografías se
+        conservan {{ diasRetencion() }} días después del análisis; luego queda solo el resultado.
       </p>
 
       <!-- Filtros -->
@@ -45,7 +46,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
             class="field-input appearance-none pl-11 pr-10"
             aria-label="Rango de fechas"
             [ngModel]="rango()"
-            (ngModelChange)="rango.set($event)"
+            (ngModelChange)="cambiarRango($event)"
           >
             <option value="30">Últimos 30 días</option>
             <option value="90">Últimos 90 días</option>
@@ -93,10 +94,10 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
             </caption>
             <thead>
               <tr class="border-b border-surface-border text-xs uppercase tracking-wider text-slate-500">
-                <th scope="col" class="px-5 py-3 font-bold">Miniatura</th>
                 <th scope="col" class="px-5 py-3 font-bold">ID / Fecha</th>
                 <th scope="col" class="px-5 py-3 font-bold">Clasificación KL</th>
                 <th scope="col" class="px-5 py-3 font-bold">Confianza</th>
+                <th scope="col" class="px-5 py-3 font-bold">Radiografía</th>
                 <th scope="col" class="px-5 py-3 font-bold">Acciones</th>
               </tr>
             </thead>
@@ -104,20 +105,21 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
               @for (a of pagina(); track a.id) {
                 <tr class="border-b border-surface-border last:border-0 hover:bg-surface-muted/60">
                   <td class="px-5 py-3">
-                    <img
-                      [src]="a.miniatura"
-                      [alt]="'Miniatura del análisis ' + a.id"
-                      class="h-14 w-12 rounded border border-surface-border bg-navy-950 object-contain"
-                    />
-                  </td>
-                  <td class="px-5 py-3">
                     <p class="font-bold text-navy-700">#{{ a.id }}</p>
-                    <p class="text-sm text-slate-500">{{ a.fecha }}</p>
+                    <p class="text-sm text-slate-500">{{ a.fecha }} · {{ a.archivo }}</p>
                   </td>
                   <td class="px-5 py-3"><app-badge-kl [grado]="a.grado" /></td>
                   <td class="px-5 py-3">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Confianza</p>
                     <p class="font-bold text-emerald-700">{{ a.confianza }}%</p>
+                  </td>
+                  <td class="px-5 py-3 text-sm">
+                    @if (a.imagenDisponible) {
+                      <p class="font-semibold text-navy-700">Disponible</p>
+                      <p class="text-slate-500">hasta {{ a.imagenExpiraEn | date: 'dd/MM/yyyy HH:mm' }}</p>
+                    } @else {
+                      <p class="text-slate-500">No disponible</p>
+                    }
                   </td>
                   <td class="px-5 py-3">
                     <a [routerLink]="['/app/resultado', a.id]" class="btn-secondary px-3 py-1.5">
@@ -129,7 +131,15 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
               } @empty {
                 <tr>
                   <td colspan="5" class="px-5 py-16 text-center text-sm text-slate-500">
-                    No se encontraron análisis con los filtros seleccionados.
+                    @if (cargando()) {
+                      Cargando historial…
+                    } @else if (error()) {
+                      <span class="text-red-600">{{ error() }}</span>
+                    } @else if (servicio.analisis().length === 0) {
+                      Todavía no hay análisis registrados.
+                    } @else {
+                      No se encontraron análisis con los filtros seleccionados.
+                    }
                   </td>
                 </tr>
               }
@@ -194,8 +204,12 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
   `
 })
 export class HistorialComponent {
-  private readonly servicio = inject(AnalisisService);
+  protected readonly servicio = inject(AnalisisService);
   private readonly config = inject(ConfiguracionService).configuracion;
+
+  readonly cargando = signal(true);
+  readonly error = signal('');
+  readonly diasRetencion = computed(() => this.config().diasRetencionImagenes);
 
   readonly busqueda = signal('');
   readonly rango = signal('30');
@@ -205,6 +219,8 @@ export class HistorialComponent {
   readonly filtrados = computed(() => {
     const texto = this.busqueda().trim().toLowerCase();
     const gradoSeleccionado = this.grado();
+    const dias = Number(this.rango());
+    const desde = dias > 0 ? this.haceDias(dias) : '';
 
     return this.servicio.analisis().filter((a) => {
       const coincideTexto =
@@ -213,7 +229,7 @@ export class HistorialComponent {
         a.archivo.toLowerCase().includes(texto);
       const coincideGrado =
         !gradoSeleccionado || a.grado === (Number(gradoSeleccionado) as GradoKL);
-      return coincideTexto && coincideGrado;
+      return coincideTexto && coincideGrado && a.fecha >= desde;
     });
   });
 
@@ -238,8 +254,23 @@ export class HistorialComponent {
     Math.min(this.paginaActual() * this.config().analisisPorPagina, this.filtrados().length)
   );
 
+  constructor() {
+    this.servicio.cargarHistorial().subscribe({
+      next: () => this.cargando.set(false),
+      error: (e: Error) => {
+        this.error.set(e.message);
+        this.cargando.set(false);
+      }
+    });
+  }
+
   cambiarBusqueda(valor: string): void {
     this.busqueda.set(valor);
+    this.paginaActual.set(1);
+  }
+
+  cambiarRango(valor: string): void {
+    this.rango.set(valor);
     this.paginaActual.set(1);
   }
 
@@ -257,5 +288,13 @@ export class HistorialComponent {
 
   irA(pagina: number): void {
     this.paginaActual.set(Math.min(Math.max(1, pagina), this.totalPaginas()));
+  }
+
+  /** Fecha local AAAA-MM-DD de hace n dias, comparable con Analisis.fecha. */
+  private haceDias(dias: number): string {
+    const fecha = new Date();
+    fecha.setDate(fecha.getDate() - dias);
+    const dosDigitos = (n: number) => String(n).padStart(2, '0');
+    return `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`;
   }
 }
