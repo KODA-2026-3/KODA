@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     # El mapa de calor se reduce a este lado maximo para no enviar varios MB de
     # Base64 por cada analisis (RD-03: respuesta en menos de 30 segundos).
     lado_maximo_heatmap_px: int = 1024
+    # Relevancia minima (0-1) para colorear un pixel; por debajo se ve la
+    # radiografia original sin tenir.
+    umbral_heatmap: float = 0.2
+    # Opacidad del color en las zonas de maxima relevancia.
+    opacidad_heatmap: float = 0.6
 
 
 settings = Settings()
