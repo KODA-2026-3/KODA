@@ -13,6 +13,7 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
 
+from app.config import settings
 from app.models.base import NUMERO_GRADOS_KL, ClasificadorKL, Prediccion
 
 LADO_ENTRADA = 299
@@ -26,14 +27,22 @@ TRANSFORMACION = transforms.Compose([
 
 # Capas de InceptionV3 hasta Mixed_7c (2048 x 8 x 8), en el orden de su forward.
 # AuxLogits se omite: torchvision solo la ejecuta en modo entrenamiento.
-CAPAS_INCEPTION = (
+# Corregida esta sección el 9.10 en revisión del gradcam
+CAPAS_INCEPTION_HASTA_6E = (
     "Conv2d_1a_3x3", "Conv2d_2a_3x3", "Conv2d_2b_3x3", "maxpool1",
     "Conv2d_3b_1x1", "Conv2d_4a_3x3", "maxpool2",
     "Mixed_5b", "Mixed_5c", "Mixed_5d",
     "Mixed_6a", "Mixed_6b", "Mixed_6c", "Mixed_6d", "Mixed_6e",
-    "Mixed_7a", "Mixed_7b", "Mixed_7c",
 )
 
+CAPAS_INCEPTION_DESDE_7A = ("Mixed_7a", "Mixed_7b", "Mixed_7c")
+
+CAPAS_INCEPTION = CAPAS_INCEPTION_HASTA_6E + CAPAS_INCEPTION_DESDE_7A
+
+BLOQUES_DENSENET_HASTA_3 = (
+    "conv0", "norm0", "relu0", "pool0",
+    "denseblock1", "transition1", "denseblock2", "transition2", "denseblock3",
+)
 
 class ArquitecturaDIKO(nn.Module):
     """
@@ -103,15 +112,73 @@ class ArquitecturaDIKO(nn.Module):
     # Se usa solo en modo eval. test_diko.py comprueba que ambos caminos dan
     # exactamente los mismos logits.
 
-    def mapas_de_caracteristicas(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Ultimos mapas espaciales de cada rama: DenseNet (1920x9x9) e Inception (2048x8x8)."""
-        mapa_densenet = self.densenet201.features(x)
+    def mapas_con_intermedios(
+        self, x: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        capas = self.densenet201.features
+        h = x
+
+        for nombre in BLOQUES_DENSENET_HASTA_3:
+            h = getattr(capas, nombre)(h)
+
+        transicion = capas.transition3
+        intermedio_densenet = transicion.relu(transicion.norm(h))
+        h = transicion.pool(transicion.conv(intermedio_densenet))
+        mapa_densenet = capas.norm5(capas.denseblock4(h))
 
         inception = self.inception_v3
-        mapa_inception = inception._transform_input(x)
-        for nombre in CAPAS_INCEPTION:
-            mapa_inception = getattr(inception, nombre)(mapa_inception)
-        return mapa_densenet, mapa_inception
+        h = inception._transform_input(x)
+
+        for nombre in CAPAS_INCEPTION_HASTA_6E:
+            h = getattr(inception, nombre)(h)
+
+        intermedio_inception = h
+
+        for nombre in CAPAS_INCEPTION_DESDE_7A:
+            h = getattr(inception, nombre)(h)
+
+        mapa_inception = h
+
+        return (
+            intermedio_densenet,
+            intermedio_inception,
+            mapa_densenet,
+            mapa_inception,
+        )
+
+
+def mapas_de_caracteristicas(
+    self, x: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    _, _, mapa_densenet, mapa_inception = self.mapas_con_intermedios(x)
+    return mapa_densenet, mapa_inception
+
+
+def clasificar_mapas(
+    self,
+    mapa_densenet: torch.Tensor,
+    mapa_inception: torch.Tensor,
+) -> torch.Tensor:
+    densenet_features = torch.flatten(self.avgpool(mapa_densenet), 1)
+    inception_features = torch.flatten(
+        self.inception_v3.avgpool(mapa_inception), 1
+    )
+
+    densenet_features = self.dropout0(
+        self.fc0_densenet(densenet_features)
+    )
+    inception_features = self.dropout0(
+        self.fc0_inception(inception_features)
+    )
+
+    combined_features = torch.cat(
+        (densenet_features, inception_features), 1
+    )
+
+    out = self.dropout1(F.relu(self.fc1(combined_features)))
+    out = self.dropout2(F.relu(self.fc2(out)))
+
+    return self.output(out)
 
     def clasificar_mapas(self, mapa_densenet: torch.Tensor, mapa_inception: torch.Tensor) -> torch.Tensor:
         """Logits a partir de los mapas de mapas_de_caracteristicas()."""
@@ -140,7 +207,7 @@ def grad_cam(mapa: torch.Tensor, gradiente: torch.Tensor) -> torch.Tensor:
     """
     pesos = gradiente.sum(dim=(2, 3), keepdim=True)
     cam = torch.relu((pesos * mapa).sum(dim=1, keepdim=True))
-    return F.interpolate(cam, size=(LADO_ENTRADA, LADO_ENTRADA), mode="bilinear", align_corners=False)
+    return _a_resolucion_de_entrada(cam)
 
 
 class ClasificadorDIKO(ClasificadorKL):
@@ -162,32 +229,58 @@ class ClasificadorDIKO(ClasificadorKL):
         # gradientes con torch.autograd.grad), por eso no hace falta un candado.
 
     def predecir(self, imagen: Image.Image) -> Prediccion:
-        """
-        Grad-CAM sobre las DOS ramas del modelo: el clasificador decide con
-        1000 caracteristicas de DenseNet201 y 1000 de InceptionV3, asi que el
-        mapa tiene que explicar ambas, no solo la mitad.
-        """
-        # requires_grad en la entrada: con los pesos congelados, es lo que hace
-        # que los mapas intermedios formen parte del grafo de gradientes.
-        entrada = TRANSFORMACION(imagen.convert("RGB")).unsqueeze(0).requires_grad_(True)
+        entrada = (
+            TRANSFORMACION(imagen.convert("RGB"))
+            .unsqueeze(0)
+            .requires_grad_(True)
+        )
 
-        mapa_densenet, mapa_inception = self._modelo.mapas_de_caracteristicas(entrada)
-        logits = self._modelo.clasificar_mapas(mapa_densenet, mapa_inception)
+        (
+            intermedio_densenet,
+            intermedio_inception,
+            mapa_densenet,
+            mapa_inception,
+        ) = self._modelo.mapas_con_intermedios(entrada)
+
+        logits = self._modelo.clasificar_mapas(
+            mapa_densenet, mapa_inception
+        )
 
         probabilidades = torch.softmax(logits, dim=1)[0].detach()
         grado = int(torch.argmax(probabilidades).item())
 
-        gradiente_densenet, gradiente_inception = torch.autograd.grad(
-            logits[0, grado], (mapa_densenet, mapa_inception)
+        tensores = (
+            mapa_densenet,
+            mapa_inception,
+            intermedio_densenet,
+            intermedio_inception,
         )
 
-        mapa = (
-            grad_cam(mapa_densenet.detach(), gradiente_densenet)
-            + grad_cam(mapa_inception.detach(), gradiente_inception)
-        )[0, 0]
-        # Si ninguna zona aporta a favor del grado predicho, el mapa queda en
-        # ceros y la superposicion muestra la radiografia sin resaltar nada.
-        mapa = mapa / (mapa.max() + 1e-8)
+        gradientes = torch.autograd.grad(logits[0, grado], tensores)
+
+        g_densenet, g_inception, g_inter_densenet, g_inter_inception = gradientes
+
+        mapa = _normalizar(
+            grad_cam(mapa_densenet.detach(), g_densenet)
+            + grad_cam(mapa_inception.detach(), g_inception)
+        )
+
+        if settings.gradcam_refinado and mapa.amax() > 0:
+            detalle = 0.5 * (
+                layer_cam(
+                    intermedio_densenet.detach(), g_inter_densenet
+                )
+                + layer_cam(
+                    intermedio_inception.detach(), g_inter_inception
+                )
+            )
+
+            refinado = mapa * detalle
+
+            if refinado.amax() > 0.05 * mapa.amax() * detalle.amax():
+                mapa = _normalizar(refinado)
+
+        mapa = mapa[0, 0]
 
         return Prediccion(
             grado_kl=grado,

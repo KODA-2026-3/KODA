@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     umbral_heatmap: float = 0.2
     # Opacidad del color en las zonas de maxima relevancia.
     opacidad_heatmap: float = 0.6
+    gradcam_refinado: bool = True
 
 
 settings = Settings()
