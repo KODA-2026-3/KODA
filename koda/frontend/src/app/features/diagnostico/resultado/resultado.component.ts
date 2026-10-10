@@ -74,16 +74,30 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
 
             <div class="card relative mt-4 overflow-hidden bg-navy-950 p-0">
               <div class="flex h-[480px] items-center justify-center overflow-hidden">
-                <img
-                  [src]="vista() === 'ORIGINAL' ? a.imagenOriginal : a.heatmap"
-                  [alt]="
-                    vista() === 'ORIGINAL'
-                      ? 'Radiografía original: ' + a.archivo
-                      : 'Mapa de calor Grad-CAM: ' + a.archivo
-                  "
-                  class="max-h-full origin-center transition-transform duration-200"
+                <!--
+                  El mapa de calor se apila sobre la radiografia original (ambas
+                  imagenes tienen las mismas proporciones) y la barra de
+                  intensidad controla su opacidad: 0 = solo la radiografia,
+                  100 = mapa de calor completo.
+                -->
+                <div
+                  class="relative max-h-full origin-center transition-transform duration-200"
                   [style.transform]="'scale(' + zoom() / 100 + ')'"
-                />
+                >
+                  <img
+                    [src]="a.imagenOriginal"
+                    [alt]="'Radiografía original: ' + a.archivo"
+                    class="block max-h-[480px]"
+                  />
+                  @if (vista() === 'HEATMAP') {
+                    <img
+                      [src]="a.heatmap"
+                      [alt]="'Mapa de calor Grad-CAM: ' + a.archivo"
+                      class="pointer-events-none absolute inset-0 h-full w-full"
+                      [style.opacity]="intensidad() / 100"
+                    />
+                  }
+                </div>
               </div>
 
               @if (a.lateralidad) {
@@ -126,6 +140,35 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
                 </button>
               </div>
             </div>
+
+            @if (vista() === 'HEATMAP') {
+              <div class="card mt-4 flex items-center gap-4 px-5 py-3.5">
+                <label
+                  for="intensidad-heatmap"
+                  class="shrink-0 text-sm font-semibold text-navy-950"
+                >
+                  Intensidad del mapa de calor
+                </label>
+                <span class="text-xs font-semibold text-slate-500" aria-hidden="true">0</span>
+                <input
+                  id="intensidad-heatmap"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  class="h-2 w-full cursor-pointer accent-navy-700"
+                  [value]="intensidad()"
+                  [attr.aria-valuetext]="intensidad() + '%'"
+                  (input)="intensidad.set(+$any($event.target).value)"
+                  (dblclick)="intensidad.set(intensidadPredeterminada)"
+                  title="Doble clic para restablecer"
+                />
+                <span class="text-xs font-semibold text-slate-500" aria-hidden="true">100</span>
+                <span class="min-w-[48px] text-right font-mono text-sm font-semibold text-navy-950">
+                  {{ intensidad() }}%
+                </span>
+              </div>
+            }
             } @else {
               <div
                 class="card flex h-[480px] flex-col items-center justify-center gap-3 px-8 text-center"
@@ -325,6 +368,13 @@ export class ResultadoComponent {
 
   readonly vista = signal<Vista>(this.config().vistaPredeterminada);
   readonly zoom = signal(100);
+  /**
+   * Opacidad (0-100) del mapa de calor sobre la radiografia. 60 reproduce el
+   * aspecto anterior; 100 muestra el mapa con la opacidad maxima del servicio
+   * de inferencia (KODA_OPACIDAD_HEATMAP).
+   */
+  readonly intensidadPredeterminada = 60;
+  readonly intensidad = signal(this.intensidadPredeterminada);
   readonly diasRetencion = this.config().diasRetencionImagenes;
   readonly eliminando = signal(false);
   readonly errorEliminar = signal('');
