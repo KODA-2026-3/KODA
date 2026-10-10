@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # radiografia original sin tenir.
     umbral_heatmap: float = 0.2
     # Opacidad del color en las zonas de maxima relevancia.
-    opacidad_heatmap: float = 0.6
+    opacidad_heatmap: float = 1.0
     # Afina el Grad-CAM de las ultimas capas (9x9 / 8x8, que salen como bloques)
     # con LayerCAM de capas con el doble de resolucion (18x18 / 17x17).
     # False vuelve al Grad-CAM clasico.
