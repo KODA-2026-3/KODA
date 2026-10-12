@@ -12,8 +12,10 @@ import {
   MODELOS_SIN_VALIDEZ_CLINICA
 } from '../../../core/models/analisis.model';
 import { AnalisisService } from '../../../core/services/analisis.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ConfiguracionService } from '../../../core/services/configuracion.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { descargarReportePdf } from './reporte-pdf';
 
 type Vista = 'ORIGINAL' | 'HEATMAP';
 
@@ -325,11 +327,19 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
                 <app-icon name="plus" [size]="18" />
                 Nuevo Análisis
               </a>
-              <button type="button" class="btn-secondary py-3" (click)="descargar()">
+              <button
+                type="button"
+                class="btn-secondary py-3 disabled:cursor-wait disabled:opacity-60"
+                [disabled]="generandoReporte()"
+                (click)="descargar(a)"
+              >
                 <app-icon name="download" [size]="18" />
-                Descargar Reporte
+                {{ generandoReporte() ? 'Generando reporte…' : 'Descargar Reporte' }}
               </button>
             </div>
+            @if (errorReporte()) {
+              <p class="text-sm text-red-600" role="alert">{{ errorReporte() }}</p>
+            }
           </div>
         </div>
 
@@ -358,6 +368,7 @@ export class ResultadoComponent {
   private readonly ruta = inject(ActivatedRoute);
   private readonly servicio = inject(AnalisisService);
   private readonly config = inject(ConfiguracionService).configuracion;
+  private readonly auth = inject(AuthService);
 
   readonly grados: GradoKL[] = [0, 1, 2, 3, 4];
   readonly vistas: { valor: Vista; etiqueta: string }[] = [
@@ -378,6 +389,8 @@ export class ResultadoComponent {
   readonly diasRetencion = this.config().diasRetencionImagenes;
   readonly eliminando = signal(false);
   readonly errorEliminar = signal('');
+  readonly generandoReporte = signal(false);
+  readonly errorReporte = signal('');
 
   /** undefined mientras carga; null si el analisis no existe. */
   readonly analisis = signal<Analisis | null | undefined>(undefined);
@@ -462,7 +475,24 @@ export class ResultadoComponent {
     return 'text-red-600';
   }
 
-  descargar(): void {
-    // Pendiente: GET /api/analisis/{id}/reporte devolvera el PDF generado en el backend.
+    async descargar(analisis: Analisis): Promise<void> {
+    const usuario = this.auth.usuario()?.nombre ?? 'Usuario no identificado';
+    this.generandoReporte.set(true);
+    this.errorReporte.set('');
+    try {
+      await descargarReportePdf({
+        analisis,
+        medico: usuario,
+        generadoPor: usuario,
+        intensidadHeatmap: this.intensidad(),
+        textoConfianza: this.textoConfianza(analisis.confianza),
+        sinValidezClinica: this.sinValidezClinica(analisis)
+      });
+    } catch (e) {
+      console.error('No se pudo generar el reporte PDF', e);
+      this.errorReporte.set('No se pudo generar el reporte. Intente de nuevo.');
+    } finally {
+      this.generandoReporte.set(false);
+    }
   }
 }

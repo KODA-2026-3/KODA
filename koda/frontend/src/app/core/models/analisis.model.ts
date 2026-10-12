@@ -17,6 +17,8 @@ export interface Analisis {
   id: string;
   /** Fecha del analisis, AAAA-MM-DD. */
   fecha: string;
+  /** Fecha y hora en que se proceso la imagen, AAAA-MM-DDTHH:mm:ss (hora del servidor). */
+  fechaProcesamiento: string;
   archivo: string;
   /** Rodilla analizada, solo cuando es identificable. */
   lateralidad?: Lateralidad;
