@@ -183,6 +183,7 @@ export class AnalisisService {
     return {
       id: `KL-${r.analisisId}`,
       fecha: r.fechaAnalisis.slice(0, 10),
+      fechaProcesamiento: r.fechaAnalisis,
       archivo: r.nombreArchivo,
       grado,
       // Se toma del mismo reparto que las barras, para que el anillo y la
