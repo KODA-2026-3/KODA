@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -30,6 +31,7 @@ import jakarta.servlet.DispatcherType;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -63,6 +65,10 @@ public class SecurityConfig {
                                 "/actuator/health/**")
                         .permitAll()
                         .requestMatchers("/medicos/**").hasRole("ADMIN")
+                        .requestMatchers("/estadisticas/**").hasRole("ADMIN")
+                        .requestMatchers("/medicos", "/medicos/**").hasRole("ADMIN")
+                        .requestMatchers("/estadisticas/personales").hasRole("MEDICO")
+                        .requestMatchers("/estadisticas", "/estadisticas/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/predict").hasRole("MEDICO")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e

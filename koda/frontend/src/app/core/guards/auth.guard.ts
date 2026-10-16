@@ -30,5 +30,5 @@ export const invitadoGuard: CanActivateFn = () => {
 
   return !auth.autenticado()
     ? true
-    : router.createUrlTree([auth.rol() === 'ADMIN' ? '/admin/medicos' : '/app/cargar']);
+    : router.createUrlTree([auth.rol() === 'ADMIN' ? '/admin/estadisticas' : '/app/cargar']);
 };
