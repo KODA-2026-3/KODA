@@ -3,8 +3,8 @@ package com.koda.backend.service;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import javax.imageio.ImageIO;
 
@@ -15,21 +15,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
+import com.koda.backend.dto.ImagenPreprocesada;
 import com.koda.backend.dto.PrediccionDTO;
 import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.exception.ImagenInvalidaException;
 import com.koda.backend.ia.IModuloIAClient;
-import com.koda.backend.model.MetadatoAnalisis;
-import com.koda.backend.model.Rol;
-import com.koda.backend.model.Usuario;
-import com.koda.backend.repository.RepositorioAnalisis;
-import com.koda.backend.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 class OrquestadorAnalisisServiceTest {
@@ -41,10 +39,7 @@ class OrquestadorAnalisisServiceTest {
     private IModuloIAClient iaClient;
 
     @Mock
-    private RepositorioAnalisis repositorio;
-
-    @Mock
-    private UsuarioRepository usuarios;
+    private HistorialAnalisisService historial;
 
     private OrquestadorAnalisisService orquestador;
 
@@ -52,7 +47,7 @@ class OrquestadorAnalisisServiceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        orquestador = new OrquestadorAnalisisService(validador, iaClient, repositorio, usuarios);
+        orquestador = new OrquestadorAnalisisService(validador, iaClient, historial);
 
         BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -69,10 +64,7 @@ class OrquestadorAnalisisServiceTest {
                 "image/png",
                 imagenPngBytes);
 
-        Usuario usuario = new Usuario("Dra. Garcia", "mgarcia@hospital.org", "mgarcia", "pass", Rol.MEDICO, "Hospital");
-
         when(validador.validarFormatoYTamano(archivo)).thenReturn("image/png");
-        when(usuarios.findByCorreoIgnoreCase("mgarcia@hospital.org")).thenReturn(Optional.of(usuario));
 
         PrediccionDTO prediccionDTO = new PrediccionDTO(
                 2,
@@ -82,15 +74,16 @@ class OrquestadorAnalisisServiceTest {
                 "simulado");
         when(iaClient.solicitarInferencia(any())).thenReturn(prediccionDTO);
 
-        MetadatoAnalisis metadatoGuardado = new MetadatoAnalisis(
-                usuario.getId(),
+        LocalDateTime ahora = LocalDateTime.now();
+        ResultadoDTO esperado = new ResultadoDTO(
+                10L,
+                prediccionDTO,
+                ahora,
                 "radiografia_rodilla.png",
-                2,
-                0.85,
                 150L,
-                "simulado",
-                java.time.LocalDateTime.now());
-        when(repositorio.save(any(MetadatoAnalisis.class))).thenReturn(metadatoGuardado);
+                ahora.plusDays(7));
+        when(historial.registrar(eq("mgarcia@hospital.org"), any(ImagenPreprocesada.class), eq(prediccionDTO), anyLong()))
+                .thenReturn(esperado);
 
         ResultadoDTO resultado = orquestador.procesarRadiografia(archivo, "mgarcia@hospital.org");
 
@@ -100,7 +93,7 @@ class OrquestadorAnalisisServiceTest {
         assertThat(resultado.prediccion().confianza()).isEqualTo(0.85);
         assertThat(resultado.prediccion().modelo()).isEqualTo("simulado");
 
-        verify(repositorio).save(any(MetadatoAnalisis.class));
+        verify(historial).registrar(eq("mgarcia@hospital.org"), any(ImagenPreprocesada.class), eq(prediccionDTO), anyLong());
     }
 
     @Test

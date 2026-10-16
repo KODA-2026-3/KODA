@@ -87,6 +87,13 @@ export class PerfilComponent {
 
   readonly usuario = this.auth.usuario;
 
+  constructor() {
+    // Para el total y la fecha del ultimo analisis; si falla, la tarjeta muestra 0 y "—".
+    if (this.auth.rol() === 'MEDICO') {
+      this.analisisService.cargarHistorial().subscribe({ error: () => undefined });
+    }
+  }
+
   rolLegible(rol: string): string {
     return rol === 'ADMIN' ? 'Administrador General' : 'Profesional médico';
   }

@@ -41,14 +41,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Jws<Claims> jws = jwtService.verificar(encabezado.substring(PREFIJO.length()));
                 Claims claims = jws.getPayload();
 
-                var autoridades = List.of(
-                        new SimpleGrantedAuthority("ROLE_" + claims.get("rol", String.class)));
-                var autenticacion = new UsernamePasswordAuthenticationToken(
-                        claims.getSubject(), null, autoridades);
                 String rol = claims.get("rol", String.class);
                 String sujeto = claims.getSubject();
 
-                SecurityContextHolder.getContext().setAuthentication(autenticacion);
                 if (sujeto != null && !sujeto.isBlank() && rol != null && !rol.isBlank()) {
                     var autoridades = List.of(new SimpleGrantedAuthority("ROLE_" + rol));
                     var autenticacion = new UsernamePasswordAuthenticationToken(sujeto, null, autoridades);

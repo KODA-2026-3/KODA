@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 
 import {
@@ -11,8 +12,10 @@ import {
   MODELOS_SIN_VALIDEZ_CLINICA
 } from '../../../core/models/analisis.model';
 import { AnalisisService } from '../../../core/services/analisis.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ConfiguracionService } from '../../../core/services/configuracion.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { descargarReportePdf } from './reporte-pdf';
 
 type Vista = 'ORIGINAL' | 'HEATMAP';
 
@@ -20,7 +23,7 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
   selector: 'app-resultado',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, IconComponent],
+  imports: [DatePipe, RouterLink, IconComponent],
   template: `
     @if (analisis(); as a) {
       <div class="mx-auto max-w-7xl">
@@ -42,12 +45,8 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
             <span class="mt-0.5 text-amber-600"><app-icon name="alert-triangle" [size]="20" /></span>
             <p class="text-sm text-amber-900">
               <strong>Resultado sin validez diagnóstica.</strong>
-              @if (a.modelo === 'simulado') {
-                El modelo de IA definitivo aún no está integrado: estos valores los genera un
-                clasificador simulado para probar la plataforma.
-              } @else {
-                Este es un registro de demostración.
-              }
+              Estos valores los generó un clasificador simulado para probar la plataforma, no el
+              modelo de IA.
             </p>
           </div>
         }
@@ -55,6 +54,7 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
         <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <!-- Visor -->
           <div>
+            @if (a.imagenDisponible) {
             <div class="card grid grid-cols-2 gap-1 p-1.5" role="tablist" aria-label="Vista de la imagen">
               @for (opcion of vistas; track opcion.valor) {
                 <button
@@ -76,16 +76,30 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
 
             <div class="card relative mt-4 overflow-hidden bg-navy-950 p-0">
               <div class="flex h-[480px] items-center justify-center overflow-hidden">
-                <img
-                  [src]="vista() === 'ORIGINAL' ? a.imagenOriginal : a.heatmap"
-                  [alt]="
-                    vista() === 'ORIGINAL'
-                      ? 'Radiografía original: ' + a.archivo
-                      : 'Mapa de calor Grad-CAM: ' + a.archivo
-                  "
-                  class="max-h-full origin-center transition-transform duration-200"
+                <!--
+                  El mapa de calor se apila sobre la radiografia original (ambas
+                  imagenes tienen las mismas proporciones) y la barra de
+                  intensidad controla su opacidad: 0 = solo la radiografia,
+                  100 = mapa de calor completo.
+                -->
+                <div
+                  class="relative max-h-full origin-center transition-transform duration-200"
                   [style.transform]="'scale(' + zoom() / 100 + ')'"
-                />
+                >
+                  <img
+                    [src]="a.imagenOriginal"
+                    [alt]="'Radiografía original: ' + a.archivo"
+                    class="block max-h-[480px]"
+                  />
+                  @if (vista() === 'HEATMAP') {
+                    <img
+                      [src]="a.heatmap"
+                      [alt]="'Mapa de calor Grad-CAM: ' + a.archivo"
+                      class="pointer-events-none absolute inset-0 h-full w-full"
+                      [style.opacity]="intensidad() / 100"
+                    />
+                  }
+                </div>
               </div>
 
               @if (a.lateralidad) {
@@ -129,6 +143,49 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
               </div>
             </div>
 
+            @if (vista() === 'HEATMAP') {
+              <div class="card mt-4 flex items-center gap-4 px-5 py-3.5">
+                <label
+                  for="intensidad-heatmap"
+                  class="shrink-0 text-sm font-semibold text-navy-950"
+                >
+                  Intensidad del mapa de calor
+                </label>
+                <span class="text-xs font-semibold text-slate-500" aria-hidden="true">0</span>
+                <input
+                  id="intensidad-heatmap"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  class="h-2 w-full cursor-pointer accent-navy-700"
+                  [value]="intensidad()"
+                  [attr.aria-valuetext]="intensidad() + '%'"
+                  (input)="intensidad.set(+$any($event.target).value)"
+                  (dblclick)="intensidad.set(intensidadPredeterminada)"
+                  title="Doble clic para restablecer"
+                />
+                <span class="text-xs font-semibold text-slate-500" aria-hidden="true">100</span>
+                <span class="min-w-[48px] text-right font-mono text-sm font-semibold text-navy-950">
+                  {{ intensidad() }}%
+                </span>
+              </div>
+            }
+            } @else {
+              <div
+                class="card flex h-[480px] flex-col items-center justify-center gap-3 px-8 text-center"
+                role="note"
+              >
+                <span class="text-slate-400"><app-icon name="file-text" [size]="40" /></span>
+                <p class="font-bold text-navy-950">La radiografía ya no está guardada</p>
+                <p class="max-w-md text-sm text-slate-600">
+                  Las radiografías y sus mapas de calor se conservan {{ diasRetencion }} días
+                  después del análisis, o hasta que el médico las elimina. El resultado del análisis
+                  sigue disponible.
+                </p>
+              </div>
+            }
+
             <p class="mt-3 flex items-center gap-2 text-sm text-slate-600">
               <app-icon name="file-text" [size]="16" />
               @if (a.lateralidad) {
@@ -136,6 +193,26 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
               }
               {{ a.archivo }}
             </p>
+
+            @if (a.imagenDisponible) {
+              <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+                <span>
+                  La radiografía se conserva hasta el
+                  {{ a.imagenExpiraEn | date: 'dd/MM/yyyy HH:mm' }}.
+                </span>
+                <button
+                  type="button"
+                  class="btn-ghost px-3 py-1.5 text-red-600 hover:bg-red-50"
+                  [disabled]="eliminando()"
+                  (click)="eliminarImagen(a)"
+                >
+                  {{ eliminando() ? 'Eliminando…' : 'Eliminar radiografía' }}
+                </button>
+              </div>
+            }
+            @if (errorEliminar()) {
+              <p class="mt-2 text-sm text-red-600" role="alert">{{ errorEliminar() }}</p>
+            }
           </div>
 
           <!-- Panel de resultados -->
@@ -205,6 +282,11 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
 
             <section class="card p-6">
               <p class="section-title mb-4">Distribución por grado</p>
+              @if (a.distribucion.length === 0) {
+                <p class="text-sm text-slate-500">
+                  La distribución por grado no se registró para este análisis.
+                </p>
+              }
               <ul class="space-y-3">
                 @for (d of a.distribucion; track d.grado) {
                   <li>
@@ -245,11 +327,19 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
                 <app-icon name="plus" [size]="18" />
                 Nuevo Análisis
               </a>
-              <button type="button" class="btn-secondary py-3" (click)="descargar()">
+              <button
+                type="button"
+                class="btn-secondary py-3 disabled:cursor-wait disabled:opacity-60"
+                [disabled]="generandoReporte()"
+                (click)="descargar(a)"
+              >
                 <app-icon name="download" [size]="18" />
-                Descargar Reporte
+                {{ generandoReporte() ? 'Generando reporte…' : 'Descargar Reporte' }}
               </button>
             </div>
+            @if (errorReporte()) {
+              <p class="text-sm text-red-600" role="alert">{{ errorReporte() }}</p>
+            }
           </div>
         </div>
 
@@ -263,9 +353,9 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
       </div>
     } @else if (analisis() === null) {
       <div class="mx-auto max-w-lg py-20 text-center">
-        <p class="text-lg font-bold text-navy-950">Este resultado ya no está disponible</p>
+        <p class="text-lg font-bold text-navy-950">No se encontró este análisis</p>
         <p class="mt-2 text-sm text-slate-600">
-          Por ahora, un resultado solo puede consultarse durante la sesión en que se generó.
+          Puede que no exista, que pertenezca a otra cuenta o que no se haya podido cargar.
         </p>
         <a routerLink="/app/cargar" class="btn-primary mt-6 px-6 py-2.5">Nuevo análisis</a>
       </div>
@@ -276,9 +366,9 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
 })
 export class ResultadoComponent {
   private readonly ruta = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly servicio = inject(AnalisisService);
   private readonly config = inject(ConfiguracionService).configuracion;
+  private readonly auth = inject(AuthService);
 
   readonly grados: GradoKL[] = [0, 1, 2, 3, 4];
   readonly vistas: { valor: Vista; etiqueta: string }[] = [
@@ -289,12 +379,51 @@ export class ResultadoComponent {
 
   readonly vista = signal<Vista>(this.config().vistaPredeterminada);
   readonly zoom = signal(100);
+  /**
+   * Opacidad (0-100) del mapa de calor sobre la radiografia. 60 reproduce el
+   * aspecto anterior; 100 muestra el mapa con la opacidad maxima del servicio
+   * de inferencia (KODA_OPACIDAD_HEATMAP).
+   */
+  readonly intensidadPredeterminada = 60;
+  readonly intensidad = signal(this.intensidadPredeterminada);
+  readonly diasRetencion = this.config().diasRetencionImagenes;
+  readonly eliminando = signal(false);
+  readonly errorEliminar = signal('');
+  readonly generandoReporte = signal(false);
+  readonly errorReporte = signal('');
 
   /** undefined mientras carga; null si el analisis no existe. */
-  readonly analisis = toSignal<Analisis | null | undefined>(
-    this.ruta.paramMap.pipe(switchMap((p) => this.servicio.obtener(p.get('id') ?? ''))),
-    { initialValue: undefined }
-  );
+  readonly analisis = signal<Analisis | null | undefined>(undefined);
+
+  constructor() {
+    this.ruta.paramMap
+      .pipe(
+        switchMap((p) => this.servicio.obtener(p.get('id') ?? '')),
+        takeUntilDestroyed()
+      )
+      .subscribe((analisis) => this.analisis.set(analisis));
+  }
+
+  eliminarImagen(analisis: Analisis): void {
+    const confirmado = window.confirm(
+      'Se eliminarán la radiografía y su mapa de calor. El resultado del análisis se conserva. ¿Continuar?'
+    );
+    if (!confirmado) {
+      return;
+    }
+    this.eliminando.set(true);
+    this.errorEliminar.set('');
+    this.servicio.eliminarImagen(analisis.id).subscribe({
+      next: () => {
+        this.analisis.set(this.servicio.sinImagenes(analisis));
+        this.eliminando.set(false);
+      },
+      error: (e: Error) => {
+        this.errorEliminar.set(e.message);
+        this.eliminando.set(false);
+      }
+    });
+  }
 
   sinValidezClinica(analisis: Analisis): boolean {
     return MODELOS_SIN_VALIDEZ_CLINICA.includes(analisis.modelo);
@@ -346,7 +475,24 @@ export class ResultadoComponent {
     return 'text-red-600';
   }
 
-  descargar(): void {
-    // Pendiente: GET /api/analisis/{id}/reporte devolvera el PDF generado en el backend.
+    async descargar(analisis: Analisis): Promise<void> {
+    const usuario = this.auth.usuario()?.nombre ?? 'Usuario no identificado';
+    this.generandoReporte.set(true);
+    this.errorReporte.set('');
+    try {
+      await descargarReportePdf({
+        analisis,
+        medico: usuario,
+        generadoPor: usuario,
+        intensidadHeatmap: this.intensidad(),
+        textoConfianza: this.textoConfianza(analisis.confianza),
+        sinValidezClinica: this.sinValidezClinica(analisis)
+      });
+    } catch (e) {
+      console.error('No se pudo generar el reporte PDF', e);
+      this.errorReporte.set('No se pudo generar el reporte. Intente de nuevo.');
+    } finally {
+      this.generandoReporte.set(false);
+    }
   }
 }

@@ -44,26 +44,47 @@ describe('AnalisisService & aPorcentajes', () => {
   });
 
   describe('AnalisisService', () => {
-    it('debe iniciar con el catálogo de demostración precargado', () => {
-      const lista = service.analisis();
-      expect(lista.length).toBe(8);
-      expect(lista[0].id).toBe('KL-8820');
-      expect(service.total()).toBe(142);
-    });
-
-    it('debe retornar un análisis existente por su ID', (done) => {
-      service.obtener('KL-8820').subscribe((item) => {
-        expect(item).not.toBeNull();
-        expect(item?.archivo).toBe('rx_000820.png');
-        done();
+    it('debe cargar el historial desde GET /analisis y transformar a Analisis', () => {
+      service.cargarHistorial().subscribe((lista) => {
+        expect(lista.length).toBe(1);
+        expect(lista[0].id).toBe('KL-88');
+        expect(lista[0].archivo).toBe('rx_88.png');
+        expect(lista[0].confianza).toBe(80);
       });
+
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/analisis`);
+      expect(req.request.method).toBe('GET');
+      req.flush([
+        {
+          analisisId: 88,
+          fechaAnalisis: '2026-10-15T10:30:00',
+          nombreArchivo: 'rx_88.png',
+          gradoKL: 2,
+          confianza: 0.8,
+          probabilidades: [0.05, 0.05, 0.8, 0.05, 0.05],
+          modelo: 'diko_stage2',
+          tiempoProcesamientoMs: 420,
+          imagenDisponible: false,
+          imagenExpiraEn: null
+        }
+      ]);
+
+      expect(service.total()).toBe(1);
     });
 
-    it('debe retornar null para un ID inexistente', (done) => {
+    it('debe retornar null para un ID con formato inválido sin hacer petición HTTP', (done) => {
       service.obtener('KL-INEXISTENTE').subscribe((item) => {
         expect(item).toBeNull();
         done();
       });
+    });
+
+    it('debe eliminar la imagen de un análisis mediante DELETE /analisis/{id}/imagen', () => {
+      service.eliminarImagen('KL-88').subscribe();
+
+      const req = httpMock.expectOne(`${environment.apiBaseUrl}/analisis/88/imagen`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
     });
   });
 });

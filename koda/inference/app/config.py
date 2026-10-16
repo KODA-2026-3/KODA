@@ -8,9 +8,10 @@ class Settings(BaseSettings):
 
     app_name: str = "KODA Inference Service"
 
-    # Clasificador activo: "simulado" (no ejecuta ningun modelo real) o "diko".
-    modelo: str = "simulado"
-    # Archivo de solo pesos generado con scripts/convertir_diko.py.
+    # Clasificador activo: "diko" (DIKO_Stage2, PyTorch) o "simulado" (no
+    # ejecuta ningun modelo real; solo para pruebas sin el archivo de pesos).
+    modelo: str = "diko"
+    # Archivo de solo pesos generado con scripts/descargar_pesos.py.
     ruta_modelo: str = "saved_models/diko_stage2_pesos.pt"
 
     # Validaciones de entrada (RF-02 / RF-17 del SRS)
@@ -23,6 +24,15 @@ class Settings(BaseSettings):
     # El mapa de calor se reduce a este lado maximo para no enviar varios MB de
     # Base64 por cada analisis (RD-03: respuesta en menos de 30 segundos).
     lado_maximo_heatmap_px: int = 1024
+    # Relevancia minima (0-1) para colorear un pixel; por debajo se ve la
+    # radiografia original sin tenir.
+    umbral_heatmap: float = 0.2
+    # Opacidad del color en las zonas de maxima relevancia.
+    opacidad_heatmap: float = 1.0
+    # Afina el Grad-CAM de las ultimas capas (9x9 / 8x8, que salen como bloques)
+    # con LayerCAM de capas con el doble de resolucion (18x18 / 17x17).
+    # False vuelve al Grad-CAM clasico.
+    gradcam_refinado: bool = True
 
 
 settings = Settings()

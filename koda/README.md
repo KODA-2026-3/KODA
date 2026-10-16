@@ -19,7 +19,7 @@ Arquitectura de tres capas:
 koda/
 ├── frontend/     # Angular 17 — interfaz clínica
 ├── backend/      # Spring Boot 3.x — API REST, autenticación, persistencia
-├── inference/    # Python / TensorFlow-Keras — clasificación KL + Grad-CAM
+├── inference/    # Python / PyTorch — clasificación KL (DIKO_Stage2) + Grad-CAM
 ├── docs/         # Documentación del proyecto (SRS, anteproyecto, SPMP, etc.)
 └── docker-compose.yml
 ```
@@ -28,7 +28,9 @@ koda/
 
 - Node.js 20+ y npm
 - JDK 17+
-- Python 3.11+
+- Python 3.11 para el servicio de inferencia (sirven 3.10 a 3.12). Con 3.13 o
+  más reciente `pip install` falla: numpy 1.26.4 y torch 2.5.1 no tienen
+  instaladores para esas versiones e intenta compilarlos.
 - Docker y Docker Compose (opcional, para levantar todo junto)
 - PostgreSQL 17 (si no se usa Docker)
 
@@ -69,11 +71,46 @@ mvn spring-boot:run     # http://localhost:8080/api
 **Inferencia**
 ```bash
 cd inference
-python3 -m venv .venv
+python3.11 -m venv .venv      # Windows: py -3.11 -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate
+python --version              # debe decir 3.11.x
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m scripts.descargar_pesos  # una sola vez: genera saved_models/diko_stage2_pesos.pt
+uvicorn app.main:app --reload --port 5000
 ```
+
+Sin Python 3.11 instalado, [uv](https://docs.astral.sh/uv/) lo descarga solo:
+`uv venv --python 3.11` y luego
+`uv pip install -r requirements.txt --index-strategy unsafe-best-match`
+(esa opción hace falta para que uv tome torch del índice de PyTorch).
+
+Los pesos del modelo no se versionan (~200 MB). `descargar_pesos` baja `DIKO.pth`
+de la versión 9 del [notebook de los autores](https://www.kaggle.com/code/tahpvm/knee-osteoarthritis-classification)
+sin token, verifica su SHA-256 y lo convierte con `scripts/convertir_diko.py`
+(unos 30 s). La versión 10 del notebook publica otros pesos, con otros resultados:
+no usar "la última versión". Para arrancar sin pesos, con el clasificador
+simulado: `KODA_MODELO=simulado`.
+
+## Evaluación del modelo
+
+Mide DIKO_Stage2 sobre el test balanceado: 351 radiografías, 75 por grado KL
+(51 de grado 4). No hace falta descargar el dataset ni tener cuenta de Kaggle:
+el script baja solo esas imágenes (unos 8 MB) del dataset público
+[Knee Osteoarthritis Dataset with Severity Grading](https://www.kaggle.com/datasets/shashwatwork/knee-osteoarthritis-dataset-with-severity)
+y verifica cada una contra la huella MD5 de `inference/datos/test_balanceado.csv`.
+
+```bash
+cd inference
+python -m scripts.descargar_pesos      # si todavía no se hizo
+python -m scripts.evaluar_test --kaggle --lista datos/test_balanceado.csv
+```
+
+La primera corrida tarda unos 6 minutos en CPU: 3 a 4 de descarga, una imagen
+a la vez, y unos 3 de inferencia. Las imágenes quedan en `~/.cache/kagglehub`,
+así que las siguientes corridas no las vuelven a bajar. Resultado esperado:
+exactitud 65.5%, ±1 grado 95.4%, kappa cuadrático 0.876.
+
+Con una copia local del dataset: `--dataset <ruta> --split test`, con o sin `--lista`.
 
 ## Estructura interna
 

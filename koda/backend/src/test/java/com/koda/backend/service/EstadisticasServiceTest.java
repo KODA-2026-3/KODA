@@ -80,4 +80,30 @@ class EstadisticasServiceTest {
         assertThat(resultado.radiografiasPorDia().get(13).cantidad()).isEqualTo(12L);
         assertThat(resultado.radiografiasPorDia().get(0).cantidad()).isEqualTo(0L);
     }
+
+    @Test
+    @DisplayName("Debe calcular estadísticas personales del médico (7 días) o retornar vacías si no existe")
+    void obtenerPersonales_retornaActividadDelMedico() {
+        com.koda.backend.model.Usuario medico = org.mockito.Mockito.mock(com.koda.backend.model.Usuario.class);
+        when(medico.getId()).thenReturn("uuid-medico-1");
+        when(usuarios.findByCorreoIgnoreCase("mgarcia@hospital.org"))
+                .thenReturn(java.util.Optional.of(medico));
+        when(repositorioAnalisis.countByUsuarioId("uuid-medico-1")).thenReturn(25L);
+        when(repositorioAnalisis.countByUsuarioIdAndFechaCreacionBetween(
+                org.mockito.ArgumentMatchers.eq("uuid-medico-1"), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(4L);
+        when(repositorioAnalisis.confianzaPromedioPorUsuario("uuid-medico-1")).thenReturn(0.91);
+        when(repositorioAnalisis.contarPorGradoKLPorUsuario("uuid-medico-1"))
+                .thenReturn(List.of(new ConteoGradoKL(2, 10L)));
+        when(repositorioAnalisis.contarPorDiaDesdePorUsuario(
+                org.mockito.ArgumentMatchers.eq("uuid-medico-1"), any(LocalDateTime.class)))
+                .thenReturn(List.of(new ConteoPorDia(LocalDate.now(), 4L)));
+
+        var personales = servicio.obtenerPersonales("mgarcia@hospital.org");
+
+        assertThat(personales.totalRadiografias()).isEqualTo(25L);
+        assertThat(personales.confianzaPromedio()).isEqualTo(0.91);
+        assertThat(personales.distribucionKL()).hasSize(5);
+        assertThat(personales.radiografiasPorDia()).hasSize(7);
+    }
 }

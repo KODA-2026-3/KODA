@@ -6,7 +6,8 @@ spring:
     active: dev
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:koda_db}
+    # Configurable para usar una base remota; por defecto, PostgreSQL local.
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:koda_db}}
     username: ${DB_USER:koda_user}
     password: ${DB_PASSWORD:koda_pass}
     driver-class-name: org.postgresql.Driver
@@ -52,6 +53,11 @@ koda:
     read-timeout-ms: ${INFERENCE_TIMEOUT_MS:25000}
   analisis:
     tamano-maximo: 10MB
+    # Dias que se conservan la radiografia y el mapa de calor para volver a abrir
+    # un resultado; despues se borran y queda solo el registro del analisis.
+    retencion-dias: ${RETENCION_DIAS:7}
+    # Cada hora, en el minuto 0: borra las radiografias vencidas.
+    limpieza-cron: "0 0 * * * *"
   jwt:
     secret: ${JWT_SECRET:changeme_dev_secret_key_change_in_production}
     expiration-ms: 86400000

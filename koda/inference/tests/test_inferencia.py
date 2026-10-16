@@ -6,13 +6,21 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from app.config import settings
 from app.main import app
 
 
 @pytest.fixture(scope="module")
 def cliente():
-    with TestClient(app) as c:
-        yield c
+    # Contrato y validaciones con el clasificador simulado: no requieren el
+    # archivo de pesos. DIKO se prueba en test_diko.py.
+    modelo_anterior = settings.modelo
+    settings.modelo = "simulado"
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        settings.modelo = modelo_anterior
 
 
 def png(arreglo: np.ndarray) -> bytes:

@@ -54,4 +54,25 @@ class ControladorEstadisticasTest {
                 .andExpect(jsonPath("$.confianzaPromedio").value(0.89))
                 .andExpect(jsonPath("$.medicosActivos").value(4));
     }
+
+    @Test
+    @DisplayName("GET /estadisticas/personales debe retornar 200 OK con las estadísticas del médico autenticado")
+    void personales_retorna200() throws Exception {
+        com.koda.backend.dto.EstadisticasPersonalesDTO dto = new com.koda.backend.dto.EstadisticasPersonalesDTO(
+                20L,
+                3L,
+                8L,
+                0.91,
+                List.of(new ConteoGradoKL(0, 5L), new ConteoGradoKL(2, 15L)),
+                List.of(new ConteoPorDia(LocalDate.now(), 3L)));
+
+        when(servicio.obtenerPersonales("mgarcia@hospital.org")).thenReturn(dto);
+
+        mockMvc.perform(get("/estadisticas/personales").principal(() -> "mgarcia@hospital.org"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalRadiografias").value(20))
+                .andExpect(jsonPath("$.radiografiasHoy").value(3))
+                .andExpect(jsonPath("$.radiografiasSemana").value(8))
+                .andExpect(jsonPath("$.confianzaPromedio").value(0.91));
+    }
 }

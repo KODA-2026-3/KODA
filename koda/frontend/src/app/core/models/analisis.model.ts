@@ -17,26 +17,31 @@ export interface Analisis {
   id: string;
   /** Fecha del analisis, AAAA-MM-DD. */
   fecha: string;
+  /** Fecha y hora en que se proceso la imagen, AAAA-MM-DDTHH:mm:ss (hora del servidor). */
+  fechaProcesamiento: string;
   archivo: string;
   /** Rodilla analizada, solo cuando es identificable. */
   lateralidad?: Lateralidad;
   grado: GradoKL;
   /** Porcentaje entero de la clase predicha. */
   confianza: number;
-  miniatura: string;
+  /** Data URL de la radiografia; vacia si ya no se conserva o todavia no se descargo. */
   imagenOriginal: string;
+  /** Data URL del mapa Grad-CAM superpuesto; vacia en los mismos casos. */
   heatmap: string;
+  /** El backend todavia conserva la radiografia y el mapa de calor. */
+  imagenDisponible: boolean;
+  /** Hasta cuando se conservan, AAAA-MM-DDTHH:mm:ss; ausente si ya no estan. */
+  imagenExpiraEn?: string;
+  /** Vacia en los analisis anteriores a que se registraran las probabilidades. */
   distribucion: DistribucionGrado[];
   /** Clasificador que produjo el resultado. */
   modelo: string;
   tiempoProcesamientoMs?: number;
 }
 
-/**
- * Resultados que no provienen de un modelo de IA real: el clasificador
- * simulado del servicio y los registros de demostracion del historial.
- */
-export const MODELOS_SIN_VALIDEZ_CLINICA = ['simulado', 'demostracion'];
+/** Resultados que no provienen de un modelo de IA real: el clasificador simulado del servicio. */
+export const MODELOS_SIN_VALIDEZ_CLINICA = ['simulado'];
 
 export const ETIQUETAS_KL: Record<GradoKL, string> = {
   0: 'Normal',
