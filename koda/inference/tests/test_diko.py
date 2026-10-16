@@ -68,14 +68,29 @@ def test_diko_es_determinista(cliente_diko):
     assert primera["probabilidades"] == segunda["probabilidades"]
 
 
-def test_mapa_de_activacion_sobre_la_rama_densenet():
+def test_mapa_de_activacion_de_ambas_ramas():
     from app.models.diko import ClasificadorDIKO
 
     clasificador = ClasificadorDIKO(settings.ruta_modelo)
     imagen = Image.open(BytesIO(png_sintetico(3))).convert("RGB")
     prediccion = clasificador.predecir(imagen)
 
-    # DenseNet201 reduce una entrada de 299 px a un mapa de 9x9.
-    assert prediccion.mapa_activacion.shape == (9, 9)
+    # Los mapas de DenseNet (9x9) e Inception (8x8) se combinan a 299x299.
+    assert prediccion.mapa_activacion.shape == (299, 299)
     assert prediccion.mapa_activacion.min() >= 0
-    assert prediccion.mapa_activacion.max() == pytest.approx(1.0)
+    # 1.0 si alguna zona apoya el grado predicho; 0 si ninguna lo hace.
+    assert prediccion.mapa_activacion.max() in (pytest.approx(1.0), 0.0)
+
+
+def test_prediccion_con_gradcam_coincide_con_el_forward():
+    # El grado que explica el mapa es el mismo que da el modelo original.
+    import torch
+
+    from app.models.diko import TRANSFORMACION, ClasificadorDIKO
+
+    clasificador = ClasificadorDIKO(settings.ruta_modelo)
+    imagen = Image.open(BytesIO(png_sintetico(4))).convert("RGB")
+    with torch.no_grad():
+        esperado = torch.softmax(clasificador._modelo(TRANSFORMACION(imagen).unsqueeze(0)), dim=1)[0]
+    prediccion = clasificador.predecir(imagen)
+    assert prediccion.probabilidades == pytest.approx(esperado.tolist(), abs=1e-5)
