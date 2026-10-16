@@ -7,7 +7,7 @@ spring:
 
   datasource:
     # Configurable para usar una base remota; por defecto, PostgreSQL local.
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/koda_db}
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:koda_db}}
     username: ${DB_USER:koda_user}
     password: ${DB_PASSWORD:koda_pass}
     driver-class-name: org.postgresql.Driver
