@@ -30,6 +30,12 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'cargar' },
       {
+        path: 'dashboard',
+        title: 'Mi Dashboard · KODA',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+      },
+      {
         path: 'cargar',
         title: 'Cargar radiografía · KODA',
         loadComponent: () =>
@@ -74,7 +80,15 @@ export const routes: Routes = [
     component: ShellComponent,
     canActivate: [authGuard, adminGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'medicos' },
+      { path: '', pathMatch: 'full', redirectTo: 'estadisticas' },
+      {
+        path: 'estadisticas',
+        title: 'Panel de administrador · KODA',
+        loadComponent: () =>
+          import('./features/admin/estadisticas/estadisticas.component').then(
+            (m) => m.EstadisticasComponent
+          )
+      },
       {
         path: 'medicos',
         title: 'Gestión de médicos · KODA',
@@ -96,13 +110,21 @@ export const routes: Routes = [
           import('./features/admin/medicos/crear-medico.component').then(
             (m) => m.CrearMedicoComponent
           )
+      },
+      {
+        path: 'historial',
+        title: 'Historial de radiografías · KODA',
+        loadComponent: () =>
+          import('./features/admin/historial/admin-historial.component').then(
+            (m) => m.AdminHistorialComponent
+          )
       }
     ]
   },
 
   // URLs del andamiaje del Sprint 1: se conservan como redirecciones
   // para no romper enlaces ya compartidos.
-  { path: 'dashboard', pathMatch: 'full', redirectTo: 'app/cargar' },
+  { path: 'dashboard', pathMatch: 'full', redirectTo: 'app/dashboard' },
   { path: 'analisis/cargar', pathMatch: 'full', redirectTo: 'app/cargar' },
   { path: 'reportes', pathMatch: 'full', redirectTo: 'app/historial' },
 

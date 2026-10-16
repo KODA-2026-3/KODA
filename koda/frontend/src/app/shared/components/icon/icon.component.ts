@@ -6,7 +6,7 @@ export type IconName =
   | 'search' | 'filter' | 'calendar' | 'chevron-left' | 'chevron-right' | 'chevron-down'
   | 'check' | 'check-double' | 'plus' | 'download' | 'sliders' | 'cpu'
   | 'mail' | 'lock' | 'phone' | 'at-sign' | 'eye' | 'info' | 'arrow-right'
-  | 'x' | 'zoom-in' | 'zoom-out' | 'maximize' | 'image';
+  | 'x' | 'zoom-in' | 'zoom-out' | 'maximize' | 'image' | 'activity';
 
 /**
  * Iconos de linea (24x24, trazo currentColor) usados en toda la aplicacion.
@@ -124,6 +124,9 @@ export type IconName =
         @case ('image') {
           <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" />
           <path d="m21 15-3.09-3.09a2 2 0 0 0-2.83 0L6 21" />
+        }
+        @case ('activity') {
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
         }
       }
     </svg>

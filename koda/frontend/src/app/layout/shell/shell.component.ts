@@ -144,13 +144,16 @@ export class ShellComponent {
   readonly menuAbierto = signal(false);
 
   private readonly navMedico: ItemNavegacion[] = [
+    { ruta: '/app/dashboard', etiqueta: 'Mi Dashboard', icono: 'activity' },
     { ruta: '/app/cargar', etiqueta: 'Cargar Radiografía', icono: 'upload-cloud' },
     { ruta: '/app/historial', etiqueta: 'Historial de Análisis', icono: 'file-text' },
     { ruta: '/app/perfil', etiqueta: 'Mi Perfil', icono: 'user' }
   ];
 
   private readonly navAdmin: ItemNavegacion[] = [
-    { ruta: '/admin/medicos', etiqueta: 'Gestión de Médicos', icono: 'users' }
+    { ruta: '/admin/estadisticas', etiqueta: 'Panel de Administrador', icono: 'activity' },
+    { ruta: '/admin/medicos', etiqueta: 'Gestión de Médicos', icono: 'users' },
+    { ruta: '/admin/historial', etiqueta: 'Historial de Radiografías', icono: 'file-text' }
   ];
 
   readonly navegacion = computed(() =>

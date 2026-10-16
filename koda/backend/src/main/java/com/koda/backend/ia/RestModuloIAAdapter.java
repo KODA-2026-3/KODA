@@ -3,6 +3,7 @@ package com.koda.backend.ia;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
@@ -36,6 +37,7 @@ public class RestModuloIAAdapter implements IModuloIAClient {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public RestModuloIAAdapter(RestClient.Builder builder,
                                ObjectMapper objectMapper,
                                @Value("${koda.inference.url}") String url,
@@ -47,6 +49,11 @@ public class RestModuloIAAdapter implements IModuloIAClient {
         fabrica.setReadTimeout(readTimeoutMs);
 
         this.restClient = builder.baseUrl(url).requestFactory(fabrica).build();
+        this.objectMapper = objectMapper;
+    }
+
+    RestModuloIAAdapter(RestClient restClient, ObjectMapper objectMapper) {
+        this.restClient = restClient;
         this.objectMapper = objectMapper;
     }
 

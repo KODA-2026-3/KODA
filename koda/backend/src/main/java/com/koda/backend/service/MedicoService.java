@@ -89,12 +89,14 @@ public class MedicoService {
     private void verificarDisponibilidad(String correo, String usuario, String idQueSeEdita) {
         repositorio.findByCorreoIgnoreCase(correo.trim())
                 .filter(u -> !u.getId().equals(idQueSeEdita))
+                .filter(u -> !java.util.Objects.equals(u.getId(), idQueSeEdita))
                 .ifPresent(u -> {
                     throw new ConflictoException("Ya existe una cuenta con ese correo electrónico.");
                 });
 
         repositorio.findByUsuarioIgnoreCase(usuario.trim())
                 .filter(u -> !u.getId().equals(idQueSeEdita))
+                .filter(u -> !java.util.Objects.equals(u.getId(), idQueSeEdita))
                 .ifPresent(u -> {
                     throw new ConflictoException("Ya existe una cuenta con ese nombre de usuario.");
                 });
