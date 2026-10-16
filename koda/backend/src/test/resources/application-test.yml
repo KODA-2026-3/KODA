@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:koda_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+koda:
+  jwt:
+    secret: clave_de_pruebas_koda_con_mas_de_32_bytes_de_longitud
+    expiration-ms: 86400000
+  inference:
+    url: http://localhost:59999
+
+logging:
+  level:
+    com.koda: INFO
+    org.springframework.security: WARN
