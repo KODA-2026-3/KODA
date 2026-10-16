@@ -54,13 +54,20 @@ public class MetadatoAnalisis {
     }
 
     public MetadatoAnalisis(String usuarioId, String nombreArchivo, int gradoKL, double confianza,
+                            long tiempoProcesamientoMs, String modelo, LocalDateTime fechaCreacion) {
+        this(usuarioId, nombreArchivo, gradoKL, confianza, List.of(), tiempoProcesamientoMs, modelo, fechaCreacion);
+    }
+
+    public MetadatoAnalisis(String usuarioId, String nombreArchivo, int gradoKL, double confianza,
                             List<Double> probabilidades, long tiempoProcesamientoMs, String modelo,
                             LocalDateTime fechaCreacion) {
         this.usuarioId = usuarioId;
         this.nombreArchivo = nombreArchivo;
         this.gradoKL = gradoKL;
         this.confianza = confianza;
-        this.probabilidades = probabilidades.stream().map(String::valueOf).collect(Collectors.joining(","));
+        this.probabilidades = (probabilidades == null || probabilidades.isEmpty())
+                ? null
+                : probabilidades.stream().map(String::valueOf).collect(Collectors.joining(","));
         this.tiempoProcesamientoMs = tiempoProcesamientoMs;
         this.modelo = modelo;
         this.fechaCreacion = fechaCreacion;

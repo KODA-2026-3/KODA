@@ -14,4 +14,9 @@ public record ResultadoDTO(
         String nombreArchivo,
         long tiempoProcesamientoMs,
         LocalDateTime imagenExpiraEn) {
+
+    public ResultadoDTO(Long analisisId, PrediccionDTO prediccion, LocalDateTime fechaAnalisis,
+                        String nombreArchivo, long tiempoProcesamientoMs) {
+        this(analisisId, prediccion, fechaAnalisis, nombreArchivo, tiempoProcesamientoMs, null);
+    }
 }
