@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/medicos/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/predict").hasRole("MEDICO")
+                        .requestMatchers("/analisis/**").hasRole("MEDICO")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

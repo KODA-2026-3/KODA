@@ -2,7 +2,6 @@ package com.koda.backend.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
@@ -20,16 +19,14 @@ import com.koda.backend.dto.PrediccionDTO;
 import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.exception.ImagenInvalidaException;
 import com.koda.backend.ia.IModuloIAClient;
-import com.koda.backend.model.MetadatoAnalisis;
-import com.koda.backend.repository.RepositorioAnalisis;
-import com.koda.backend.repository.UsuarioRepository;
 
 /**
  * Coordina el flujo de un analisis: valida la radiografia, solicita la
  * inferencia, registra el resultado y arma la respuesta (diagrama de secuencia
  * del SDD, pasos 2 a 17).
  *
- * La imagen solo vive en memoria durante la solicitud: no se escribe en disco.
+ * La imagen no se escribe en disco: HistorialAnalisisService la guarda en la
+ * base de datos durante el plazo de retencion.
  */
 @Service
 public class OrquestadorAnalisisService {
@@ -39,15 +36,13 @@ public class OrquestadorAnalisisService {
 
     private final ValidadorImagen validador;
     private final IModuloIAClient iaClient;
-    private final RepositorioAnalisis repositorio;
-    private final UsuarioRepository usuarios;
+    private final HistorialAnalisisService historial;
 
     public OrquestadorAnalisisService(ValidadorImagen validador, IModuloIAClient iaClient,
-                                      RepositorioAnalisis repositorio, UsuarioRepository usuarios) {
+                                      HistorialAnalisisService historial) {
         this.validador = validador;
         this.iaClient = iaClient;
-        this.repositorio = repositorio;
-        this.usuarios = usuarios;
+        this.historial = historial;
     }
 
     public ResultadoDTO procesarRadiografia(MultipartFile archivo, String correoUsuario) {
@@ -61,23 +56,12 @@ public class OrquestadorAnalisisService {
         PrediccionDTO prediccion = iaClient.solicitarInferencia(imagen);
 
         long tiempoMs = (System.nanoTime() - inicio) / 1_000_000;
-        // Si la cuenta dejo de existir durante el analisis, el registro se guarda sin usuario.
-        String usuarioId = usuarios.findByCorreoIgnoreCase(correoUsuario).map(u -> u.getId()).orElse(null);
-
-        MetadatoAnalisis registro = repositorio.save(new MetadatoAnalisis(
-                usuarioId,
-                nombreArchivo,
-                prediccion.gradoKL(),
-                prediccion.confianza(),
-                tiempoMs,
-                prediccion.modelo(),
-                LocalDateTime.now()));
+        ResultadoDTO resultado = historial.registrar(correoUsuario, imagen, prediccion, tiempoMs);
 
         log.info("Analisis {} completado: grado KL {}, confianza {}, {} ms, modelo {}",
-                registro.getId(), prediccion.gradoKL(), prediccion.confianza(), tiempoMs, prediccion.modelo());
-
-        return new ResultadoDTO(registro.getId(), prediccion, registro.getFechaCreacion(),
-                nombreArchivo, tiempoMs);
+                resultado.analisisId(), prediccion.gradoKL(), prediccion.confianza(), tiempoMs,
+                prediccion.modelo());
+        return resultado;
     }
 
     private byte[] leer(MultipartFile archivo) {

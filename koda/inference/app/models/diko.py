@@ -3,8 +3,7 @@ Clasificador DIKO_Stage2 (DenseNet201 + InceptionV3), modelo elegido en el
 Reporte de Seleccion del Modelo KL.
 
 Fuente: https://www.kaggle.com/code/tahpvm/knee-osteoarthritis-classification
-Framework: PyTorch. Su uso en lugar de TensorFlow/Keras requiere la aprobacion
-de la directora (requerimiento RDE-02 del SRS).
+Framework: PyTorch (requerimiento RDE-02 del SRS).
 """
 import threading
 

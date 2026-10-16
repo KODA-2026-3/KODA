@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
+import { EstadoSistemaService } from '../../core/services/estado-sistema.service';
 import { IconComponent, IconName } from '../../shared/components/icon/icon.component';
 import { LogoKodaComponent } from '../../shared/components/logo/logo-koda.component';
 
@@ -89,9 +90,19 @@ interface ItemNavegacion {
             >
               <app-icon name="sliders" [size]="20" />
             </button>
-            <span class="hidden items-center gap-2 text-sm font-medium text-slate-600 sm:flex">
-              <span class="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
-              Servidor Conectado · GPU Activa
+            <span
+              class="hidden items-center gap-2 text-sm font-medium text-slate-600 sm:flex"
+              role="status"
+            >
+              <span
+                class="h-2 w-2 rounded-full"
+                [class.bg-slate-300]="estado().nivel === 'verificando'"
+                [class.bg-emerald-500]="estado().nivel === 'ok'"
+                [class.bg-amber-500]="estado().nivel === 'advertencia'"
+                [class.bg-red-500]="estado().nivel === 'error'"
+                aria-hidden="true"
+              ></span>
+              {{ estado().mensaje }}
             </span>
             @if (usuario()?.institucion) {
               <span class="hidden items-center gap-2 text-sm text-slate-500 xl:flex">
@@ -129,6 +140,7 @@ export class ShellComponent {
 
   readonly version = 'v2.4.0';
   readonly usuario = this.auth.usuario;
+  readonly estado = inject(EstadoSistemaService).estado;
   readonly menuAbierto = signal(false);
 
   private readonly navMedico: ItemNavegacion[] = [

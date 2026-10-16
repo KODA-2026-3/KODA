@@ -2,7 +2,7 @@
 Pruebas del clasificador DIKO_Stage2 real.
 
 Se omiten si falta PyTorch o el archivo de pesos, que no se versiona (pesa
-~200 MB): se genera con scripts/convertir_diko.py a partir de DIKO.pth.
+~200 MB): se descarga y genera con scripts/descargar_pesos.py.
 """
 import base64
 from io import BytesIO
@@ -14,10 +14,10 @@ from PIL import Image
 
 from app.config import settings
 
-pytest.importorskip("torch", reason="requirements-diko.txt no instalado")
+pytest.importorskip("torch", reason="PyTorch no instalado (requirements.txt)")
 pytestmark = pytest.mark.skipif(
     not Path(settings.ruta_modelo).exists(),
-    reason=f"falta {settings.ruta_modelo}: ejecutar scripts/convertir_diko.py",
+    reason=f"falta {settings.ruta_modelo}: ejecutar python -m scripts.descargar_pesos",
 )
 
 
