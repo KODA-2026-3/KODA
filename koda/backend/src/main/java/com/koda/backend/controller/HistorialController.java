@@ -11,9 +11,9 @@ import com.koda.backend.dto.AnalisisResponse;
 import com.koda.backend.repository.UsuarioRepository;
 import com.koda.backend.service.HistorialService;
 
-/** Historial de analisis de radiografias. */
+/** Historial de analisis de radiografias para el panel de administracion. */
 @RestController
-@RequestMapping("/analisis")
+@RequestMapping("/admin/analisis")
 public class HistorialController {
 
     private final HistorialService historialService;
@@ -31,7 +31,7 @@ public class HistorialController {
         return historialService.listarTodos();
     }
 
-    /** Analisis del medico autenticado. Solo accesible con rol MEDICO. */
+    /** Analisis del usuario autenticado. */
     @GetMapping("/mis-analisis")
     public List<AnalisisResponse> misAnalisis(Principal principal) {
         String usuarioId = usuarioRepository.findByCorreoIgnoreCase(principal.getName())

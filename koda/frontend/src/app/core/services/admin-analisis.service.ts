@@ -16,7 +16,7 @@ export class AdminAnalisisService {
   readonly totalAnalisis = signal(0);
 
   listar(): Observable<AnalisisResponse[]> {
-    return this.http.get<AnalisisResponse[]>(`${environment.apiBaseUrl}/analisis`).pipe(
+    return this.http.get<AnalisisResponse[]>(`${environment.apiBaseUrl}/admin/analisis`).pipe(
       tap((lista) => {
         this._analisis.set(lista);
         this.totalAnalisis.set(lista.length);

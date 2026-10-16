@@ -6,7 +6,7 @@ spring:
     active: dev
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/koda_db
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:koda_db}
     username: ${DB_USER:koda_user}
     password: ${DB_PASSWORD:koda_pass}
     driver-class-name: org.postgresql.Driver

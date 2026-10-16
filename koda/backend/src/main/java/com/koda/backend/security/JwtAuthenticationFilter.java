@@ -45,8 +45,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new SimpleGrantedAuthority("ROLE_" + claims.get("rol", String.class)));
                 var autenticacion = new UsernamePasswordAuthenticationToken(
                         claims.getSubject(), null, autoridades);
+                String rol = claims.get("rol", String.class);
+                String sujeto = claims.getSubject();
 
                 SecurityContextHolder.getContext().setAuthentication(autenticacion);
+                if (sujeto != null && !sujeto.isBlank() && rol != null && !rol.isBlank()) {
+                    var autoridades = List.of(new SimpleGrantedAuthority("ROLE_" + rol));
+                    var autenticacion = new UsernamePasswordAuthenticationToken(sujeto, null, autoridades);
+                    SecurityContextHolder.getContext().setAuthentication(autenticacion);
+                }
             } catch (JwtException e) {
                 // Token invalido o expirado: la peticion sigue sin autenticar
                 // y la cadena de seguridad respondera 401 si la ruta lo exige.

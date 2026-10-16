@@ -22,6 +22,7 @@ services:
       - db
       - inference
     environment:
+      DB_HOST: db
       DB_USER: koda_user
       DB_PASSWORD: koda_pass
       INFERENCE_URL: http://inference:5000

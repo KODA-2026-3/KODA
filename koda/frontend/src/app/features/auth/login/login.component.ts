@@ -189,7 +189,7 @@ export class LoginComponent {
         this.cargando.set(false);
         const destino =
           this.ruta.snapshot.queryParamMap.get('redirigir') ??
-          (usuario.rol === 'ADMIN' ? '/admin/medicos' : '/app/cargar');
+          (usuario.rol === 'ADMIN' ? '/admin/estadisticas' : '/app/cargar');
         void this.router.navigateByUrl(destino);
       },
       error: (e: Error) => {
