@@ -11,6 +11,8 @@ export interface DatosReporte {
   generadoPor: string;
   /** Intensidad (0-100) de la barra del visor al pulsar el boton: el PDF muestra lo mismo que la pantalla. */
   intensidadHeatmap: number;
+  /** Contraste (%) de la radiografia en el visor; 100 = sin modificar. */
+  contraste: number;
   /** "Confianza alta / media / baja", segun los umbrales de la configuracion. */
   textoConfianza: string;
   sinValidezClinica: boolean;
@@ -176,8 +178,8 @@ async function seccionImagenes(doc: jsPDF, datos: DatosReporte, y: number): Prom
     cargarImagen(analisis.imagenOriginal),
     cargarImagen(analisis.heatmap)
   ]);
-  const imagenOriginal = aJpeg(original, null, 0);
-  const imagenHeatmap = aJpeg(original, heatmap, datos.intensidadHeatmap / 100);
+  const imagenOriginal = aJpeg(original, datos.contraste, null, 0);
+  const imagenHeatmap = aJpeg(original, datos.contraste, heatmap, datos.intensidadHeatmap / 100);
 
   const separacion = 8;
   const anchoCaja = (ANCHO_UTIL - separacion) / 2;
@@ -187,7 +189,12 @@ async function seccionImagenes(doc: jsPDF, datos: DatosReporte, y: number): Prom
   const alto = ancho / proporcion;
 
   const cajas: { x: number; imagen: string; titulo: string; detalle: string }[] = [
-    { x: MARGEN, imagen: imagenOriginal, titulo: 'Radiografía original', detalle: '' },
+    {
+      x: MARGEN,
+      imagen: imagenOriginal,
+      titulo: 'Radiografía original',
+      detalle: `Contraste ${Math.round(datos.contraste)}%`
+    },
     {
       x: MARGEN + anchoCaja + separacion,
       imagen: imagenHeatmap,
@@ -343,10 +350,15 @@ function cargarImagen(src: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Dibuja la radiografia (y, si se indica, el mapa de calor encima con la
- * opacidad elegida, igual que el visor) y la devuelve como JPEG.
+ * Dibuja la radiografia con el contraste del visor (y, si se indica, el mapa de
+ * calor encima con la opacidad elegida, igual que el visor) y la devuelve como JPEG.
  */
-function aJpeg(base: HTMLImageElement, encima: HTMLImageElement | null, opacidad: number): string {
+function aJpeg(
+  base: HTMLImageElement,
+  contraste: number,
+  encima: HTMLImageElement | null,
+  opacidad: number
+): string {
   const escala = Math.min(1, LADO_MAXIMO_IMAGEN_PX / Math.max(base.naturalWidth, base.naturalHeight));
   const lienzo = document.createElement('canvas');
   lienzo.width = Math.round(base.naturalWidth * escala);
@@ -357,11 +369,37 @@ function aJpeg(base: HTMLImageElement, encima: HTMLImageElement | null, opacidad
     throw new Error('El navegador no permite generar el reporte.');
   }
   ctx.drawImage(base, 0, 0, lienzo.width, lienzo.height);
+  // Solo la radiografia lleva el contraste; el mapa de calor se dibuja despues sin el.
+  aplicarContraste(ctx, lienzo.width, lienzo.height, contraste);
   if (encima && opacidad > 0) {
     ctx.globalAlpha = Math.min(1, opacidad);
     ctx.drawImage(encima, 0, 0, lienzo.width, lienzo.height);
   }
   return lienzo.toDataURL('image/jpeg', 0.92);
+}
+
+/**
+ * Misma formula que el filtro CSS contrast() del visor: c' = (c - 0.5) * k + 0.5.
+ * Se hace a mano porque ctx.filter no esta disponible en todos los navegadores.
+ */
+function aplicarContraste(
+  ctx: CanvasRenderingContext2D,
+  ancho: number,
+  alto: number,
+  contraste: number
+): void {
+  const k = contraste / 100;
+  if (k === 1) {
+    return;
+  }
+  const datos = ctx.getImageData(0, 0, ancho, alto);
+  const px = datos.data;
+  for (let i = 0; i < px.length; i += 4) {
+    px[i] = (px[i] - 127.5) * k + 127.5;
+    px[i + 1] = (px[i + 1] - 127.5) * k + 127.5;
+    px[i + 2] = (px[i + 2] - 127.5) * k + 127.5;
+  }
+  ctx.putImageData(datos, 0, 0);
 }
 
 /** "2026-10-11T22:40:12.5" -> "11/10/2026 22:40". Sin pasar por Date: es la hora del servidor, sin zona. */
