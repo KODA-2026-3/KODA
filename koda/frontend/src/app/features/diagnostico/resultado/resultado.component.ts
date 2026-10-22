@@ -90,6 +90,7 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
                     [src]="a.imagenOriginal"
                     [alt]="'Radiografía original: ' + a.archivo"
                     class="block max-h-[480px]"
+                    [style.filter]="'contrast(' + contraste() + '%)'"
                   />
                   @if (vista() === 'HEATMAP') {
                     <img
@@ -141,6 +142,41 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
                   Ajustar
                 </button>
               </div>
+            </div>
+
+            <!--
+              El contraste se aplica solo a la radiografia original, de modo que
+              los colores del mapa de calor no se alteran.
+            -->
+            <div class="card mt-4 flex items-center gap-4 px-5 py-3.5">
+              <label
+                for="contraste-radiografia"
+                class="shrink-0 text-sm font-semibold text-navy-950"
+              >
+                Contraste de la radiografía
+              </label>
+              <span class="text-xs font-semibold text-slate-500" aria-hidden="true">
+                {{ contrasteMinimo }}
+              </span>
+              <input
+                id="contraste-radiografia"
+                type="range"
+                [min]="contrasteMinimo"
+                [max]="contrasteMaximo"
+                step="5"
+                class="h-2 w-full cursor-pointer accent-navy-700"
+                [value]="contraste()"
+                [attr.aria-valuetext]="contraste() + '%'"
+                (input)="contraste.set(+$any($event.target).value)"
+                (dblclick)="contraste.set(contrastePredeterminado)"
+                title="Doble clic para restablecer"
+              />
+              <span class="text-xs font-semibold text-slate-500" aria-hidden="true">
+                {{ contrasteMaximo }}
+              </span>
+              <span class="min-w-[48px] text-right font-mono text-sm font-semibold text-navy-950">
+                {{ contraste() }}%
+              </span>
             </div>
 
             @if (vista() === 'HEATMAP') {
@@ -386,6 +422,14 @@ export class ResultadoComponent {
    */
   readonly intensidadPredeterminada = 60;
   readonly intensidad = signal(this.intensidadPredeterminada);
+  /**
+   * Contraste (%) aplicado con un filtro CSS a la radiografia original. 100 es
+   * la imagen sin modificar; solo afecta la visualizacion, no el analisis.
+   */
+  readonly contrastePredeterminado = 100;
+  readonly contrasteMinimo = 50;
+  readonly contrasteMaximo = 200;
+  readonly contraste = signal(this.contrastePredeterminado);
   readonly diasRetencion = this.config().diasRetencionImagenes;
   readonly eliminando = signal(false);
   readonly errorEliminar = signal('');
