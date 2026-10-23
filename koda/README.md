@@ -51,7 +51,7 @@ docker compose up --build
 - Frontend: http://localhost:4200
 - Backend: http://localhost:8080/api
 - Swagger: http://localhost:8080/swagger-ui.html
-- Inferencia: http://localhost:8000/docs
+- Inferencia: http://localhost:5000/docs
 
 ### 2. Opción B — Levantar cada módulo por separado
 
@@ -117,7 +117,9 @@ Con una copia local del dataset: `--dataset <ruta> --split test`, con o sin `--l
 **frontend/src/app**
 - `core/` — servicios, guards, interceptores y modelos transversales
 - `shared/` — componentes, pipes y utilidades reutilizables
-- `features/` — módulos funcionales (auth, pacientes, radiografías, diagnóstico, dashboard)
+- `layout/` — el shell de la aplicación (barra lateral y cabecera)
+- `features/` — módulos funcionales (auth, pacientes, radiografías, diagnóstico,
+  dashboard, historial, perfil, admin)
 
 **backend/src/main/java/com/koda/backend**
 - `controller/` — endpoints REST
@@ -127,6 +129,8 @@ Con una copia local del dataset: `--dataset <ruta> --split test`, con o sin `--l
 - `dto/` — objetos de transferencia
 - `config/` — configuración (seguridad, CORS, OpenAPI)
 - `security/` — JWT y filtros de autenticación
+- `ia/` — cliente REST del servicio de inferencia y su health indicator
+- `exception/` — excepciones de dominio y el manejador global de errores
 
 **inference/app**
 - `api/routes/` — endpoints FastAPI
