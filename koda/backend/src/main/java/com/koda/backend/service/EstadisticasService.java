@@ -24,7 +24,7 @@ import com.koda.backend.repository.UsuarioRepository;
 public class EstadisticasService {
 
     /** Ventana del grafico "radiografias por dia" en el panel del administrador. */
-    private static final int DIAS_HISTORIAL_ADMIN = 14;
+    private static final int DIAS_HISTORIAL_ADMIN = 7;
 
     /** Ventana del grafico personal del medico: la semana en curso. */
     private static final int DIAS_HISTORIAL_MEDICO = 7;
