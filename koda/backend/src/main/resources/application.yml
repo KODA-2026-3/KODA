@@ -18,6 +18,16 @@ spring:
       max-file-size: 11MB
       max-request-size: 12MB
 
+  mail:
+    # Vacio: el codigo de recuperacion se escribe en el log (desarrollo).
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -58,6 +68,11 @@ koda:
     retencion-dias: ${RETENCION_DIAS:7}
     # Cada hora, en el minuto 0: borra las radiografias vencidas.
     limpieza-cron: "0 0 * * * *"
+  recuperacion:
+    remitente: ${MAIL_FROM:no-reply@koda.local}
+    vigencia-minutos: 15
+    # Espera minima entre codigos para la misma cuenta: evita llenarle el buzon.
+    espera-segundos: 60
   jwt:
     secret: ${JWT_SECRET:changeme_dev_secret_key_change_in_production}
     expiration-ms: 86400000
@@ -66,6 +81,9 @@ management:
   health:
     # El endpoint es publico: el indicador de disco expondria rutas del servidor.
     diskspace:
+      enabled: false
+    # Sin SMTP configurado reportaria DOWN y ocultaria el estado real del sistema.
+    mail:
       enabled: false
   endpoints:
     web:

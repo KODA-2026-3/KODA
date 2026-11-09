@@ -28,6 +28,41 @@ describe('AuthService', () => {
     sessionStorage.clear();
   });
 
+  it('debe pedir el código de recuperación al backend', () => {
+    service.solicitarRecuperacion(' mgarcia@hospital.org ').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/auth/recuperacion'));
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ correo: 'mgarcia@hospital.org' });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('debe enviar correo, código y contraseña al restablecer', () => {
+    service.restablecerContrasena('mgarcia@hospital.org', '123456', 'NuevaClave1!').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/auth/recuperacion/restablecer'));
+    expect(req.request.body).toEqual({
+      correo: 'mgarcia@hospital.org',
+      codigo: '123456',
+      nuevaContrasena: 'NuevaClave1!'
+    });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('debe mostrar el mensaje del backend si el código no sirve', (done) => {
+    service.restablecerContrasena('mgarcia@hospital.org', '000000', 'NuevaClave1!').subscribe({
+      next: () => fail('No debió restablecer con un código inválido'),
+      error: (e: Error) => {
+        expect(e.message).toBe('El código es incorrecto o venció.');
+        done();
+      }
+    });
+
+    httpMock
+      .expectOne((r) => r.url.endsWith('/auth/recuperacion/restablecer'))
+      .flush({ mensaje: 'El código es incorrecto o venció.' }, { status: 400, statusText: 'Bad Request' });
+  });
+
   it('debe inicializarse sin usuario autenticado', () => {
     expect(service.autenticado()).toBeFalse();
     expect(service.usuario()).toBeNull();

@@ -29,6 +29,11 @@ services:
       DB_PASSWORD: koda_pass
       INFERENCE_URL: http://inference:5000
       JWT_SECRET: ${JWT_SECRET:-changeme_dev_secret_key_change_in_production}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@koda.local}
     ports:
       - "8080:8080"
 
