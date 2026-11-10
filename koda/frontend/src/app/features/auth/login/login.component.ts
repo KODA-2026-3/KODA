@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { MOTIVO_INACTIVIDAD } from '../../../core/services/inactividad.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LogoKodaComponent } from '../../../shared/components/logo/logo-koda.component';
 
@@ -48,6 +49,31 @@ import { LogoKodaComponent } from '../../../shared/components/logo/logo-koda.com
       <!-- Formulario -->
       <section class="flex flex-col justify-center bg-white px-6 py-12 sm:px-16">
         <div class="mx-auto w-full max-w-md">
+          @if (sesionExpirada() && !error()) {
+            <div
+              class="mb-8 flex gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4"
+              role="status"
+              aria-live="polite"
+            >
+              <span class="mt-0.5 text-amber-600"><app-icon name="info" [size]="18" /></span>
+              <div class="flex-1">
+                <p class="text-sm font-bold text-amber-800">Se cerró su sesión por inactividad</p>
+                <p class="mt-0.5 text-sm text-amber-700">
+                  Por seguridad, su sesión finalizó tras un periodo sin actividad. Inicie sesión
+                  nuevamente para continuar.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="self-start text-amber-600 hover:text-amber-800"
+                aria-label="Cerrar aviso"
+                (click)="sesionExpirada.set(false)"
+              >
+                <app-icon name="x" [size]="16" />
+              </button>
+            </div>
+          }
+
           @if (error()) {
             <div
               class="mb-8 flex gap-3 rounded-lg border border-red-300 bg-red-50 p-4"
@@ -160,6 +186,9 @@ export class LoginComponent {
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
   readonly verContrasena = signal(false);
+  readonly sesionExpirada = signal(
+    this.ruta.snapshot.queryParamMap.get('motivo') === MOTIVO_INACTIVIDAD
+  );
 
   readonly formulario = this.fb.nonNullable.group({
     correo: ['', [Validators.required, Validators.email]],
