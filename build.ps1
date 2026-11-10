@@ -23,7 +23,7 @@ try {
     Write-Host "Frontend:   http://localhost:4200"
     Write-Host "Backend:    http://localhost:8080/api"
     Write-Host "Swagger:    http://localhost:8080/swagger-ui.html"
-    Write-Host "Inferencia: http://localhost:8000/docs"
+    Write-Host "Inferencia: http://localhost:5000/docs"
 }
 finally {
     Pop-Location
