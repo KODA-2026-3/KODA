@@ -1,10 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { EstadoSistemaService } from '../../core/services/estado-sistema.service';
+import { InactividadService } from '../../core/services/inactividad.service';
 import { IconComponent, IconName } from '../../shared/components/icon/icon.component';
 import { LogoKodaComponent } from '../../shared/components/logo/logo-koda.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 interface ItemNavegacion {
   ruta: string;
@@ -17,7 +26,14 @@ interface ItemNavegacion {
   selector: 'app-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, IconComponent, LogoKodaComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    IconComponent,
+    LogoKodaComponent,
+    ModalComponent
+  ],
   template: `
     <div class="flex min-h-screen bg-surface-muted">
       <!-- Barra lateral -->
@@ -132,6 +148,35 @@ interface ItemNavegacion {
         </main>
       </div>
     </div>
+
+    <!-- Advertencia de cierre por inactividad -->
+    <app-modal
+      [abierto]="inactividad.advertenciaVisible()"
+      [cerrableConVelo]="false"
+      etiqueta="Sesión por expirar"
+    >
+      <span
+        class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600"
+      >
+        <app-icon name="alert-triangle" [size]="28" />
+      </span>
+      <h2 class="text-2xl font-extrabold text-navy-950">Su sesión está por expirar</h2>
+      <p class="mt-3 text-sm leading-relaxed text-slate-600">
+        No hemos detectado actividad en los últimos minutos. Por seguridad, su sesión se cerrará
+        automáticamente por inactividad en:
+      </p>
+      <p class="mt-4 text-4xl font-extrabold tabular-nums text-navy-950" aria-live="polite">
+        {{ inactividad.tiempoRestante() }}
+      </p>
+      <div class="mt-6 grid gap-3 sm:grid-cols-2">
+        <button type="button" class="btn-secondary py-3" (click)="cerrarSesion()">
+          Cerrar sesión
+        </button>
+        <button type="button" class="btn-primary py-3" (click)="inactividad.continuarSesion()">
+          Seguir conectado
+        </button>
+      </div>
+    </app-modal>
   `
 })
 export class ShellComponent {
@@ -142,6 +187,12 @@ export class ShellComponent {
   readonly usuario = this.auth.usuario;
   readonly estado = inject(EstadoSistemaService).estado;
   readonly menuAbierto = signal(false);
+  readonly inactividad = inject(InactividadService);
+
+  constructor() {
+    this.inactividad.iniciar();
+    inject(DestroyRef).onDestroy(() => this.inactividad.detener());
+  }
 
   private readonly navMedico: ItemNavegacion[] = [
     { ruta: '/app/dashboard', etiqueta: 'Mi Dashboard', icono: 'activity' },
@@ -167,6 +218,7 @@ export class ShellComponent {
   });
 
   cerrarSesion(): void {
+    this.inactividad.detener();
     this.auth.cerrarSesion();
     void this.router.navigate(['/login']);
   }
