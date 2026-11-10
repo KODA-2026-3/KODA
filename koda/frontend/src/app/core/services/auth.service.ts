@@ -136,14 +136,30 @@ export class AuthService {
     this.cerrarSesion();
   }
 
-  /** Paso 1 del flujo de recuperación. Pendiente de endpoint en el backend. */
-  solicitarRecuperacion(_correo: string): Observable<void> {
-    return of(void 0).pipe(delay(700));
+  /** Paso 1 de la recuperación: el backend envía un código al correo, si la cuenta existe. */
+  solicitarRecuperacion(correo: string): Observable<void> {
+    if (environment.authMock) {
+      return of(void 0).pipe(delay(700));
+    }
+
+    return this.http
+      .post<void>(`${environment.apiBaseUrl}/auth/recuperacion`, { correo: correo.trim() })
+      .pipe(catchError((error: HttpErrorResponse) => throwError(() => this.aErrorRecuperacion(error))));
   }
 
-  /** Paso 2 del flujo de recuperación. Pendiente de endpoint en el backend. */
-  restablecerContrasena(_correo: string, _contrasena: string): Observable<void> {
-    return of(void 0).pipe(delay(700));
+  /** Paso 2 de la recuperación: cambia la contraseña si el código es válido. */
+  restablecerContrasena(correo: string, codigo: string, contrasena: string): Observable<void> {
+    if (environment.authMock) {
+      return of(void 0).pipe(delay(700));
+    }
+
+    return this.http
+      .post<void>(`${environment.apiBaseUrl}/auth/recuperacion/restablecer`, {
+        correo: correo.trim(),
+        codigo: codigo.trim(),
+        nuevaContrasena: contrasena
+      })
+      .pipe(catchError((error: HttpErrorResponse) => throwError(() => this.aErrorRecuperacion(error))));
   }
 
   private aUsuario(respuesta: LoginResponse): Usuario {
@@ -167,6 +183,13 @@ export class AuthService {
       return new Error(error.error?.mensaje ?? MENSAJE_CREDENCIALES);
     }
     return new Error(error.error?.mensaje ?? 'Ocurrió un error al iniciar sesión.');
+  }
+
+  private aErrorRecuperacion(error: HttpErrorResponse): Error {
+    if (error.status === 0) {
+      return new Error(MENSAJE_SIN_CONEXION);
+    }
+    return new Error(error.error?.mensaje ?? 'No se pudo restablecer la contraseña. Intente nuevamente.');
   }
 
   private guardarToken(token: string, recordar: boolean): void {

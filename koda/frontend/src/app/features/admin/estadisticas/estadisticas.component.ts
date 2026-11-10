@@ -75,23 +75,25 @@ interface BarraGrado {
       <div class="mt-6 grid gap-6 lg:grid-cols-5">
         <!-- Radiografias por dia -->
         <div class="card p-6 lg:col-span-3">
-          <p class="section-title">Radiografías analizadas (últimos 14 días)</p>
+          <p class="section-title">Radiografías analizadas (últimos 7 días)</p>
 
           @if (!cargando() && barrasDias().length > 0) {
-            <div class="mt-6 flex h-48 items-end gap-1.5 sm:gap-2">
+            <div class="mt-6 flex h-56 gap-2 sm:gap-3">
               @for (dia of barrasDias(); track dia.fecha) {
-                <div class="flex flex-1 flex-col items-center gap-2">
+                <div class="flex min-w-0 flex-1 flex-col items-center gap-2">
                   <div
-                    class="flex w-full flex-1 items-end"
+                    class="flex min-h-0 w-full flex-1 flex-col items-center justify-end"
+                    role="img"
                     [attr.aria-label]="dia.etiqueta + ': ' + dia.cantidad + ' radiografías'"
                   >
+                    <span class="mb-1 text-xs font-bold text-navy-900">{{ dia.cantidad }}</span>
                     <div
                       class="w-full rounded-t bg-navy-600 transition-all"
                       [style.height.%]="dia.alturaPct"
                       [title]="dia.etiqueta + ': ' + dia.cantidad"
                     ></div>
                   </div>
-                  <span class="text-[10px] font-medium text-slate-400">{{ dia.etiqueta }}</span>
+                  <span class="text-[11px] font-medium text-slate-400">{{ dia.etiqueta }}</span>
                 </div>
               }
             </div>
@@ -174,8 +176,9 @@ export class EstadisticasComponent implements OnInit {
       fecha: d.fecha,
       etiqueta: this.etiquetaDia(d.fecha),
       cantidad: d.cantidad,
+      // Hasta 85 %: el resto del alto es para el numero encima de la barra.
       // Altura minima para que un dia en 0 siga siendo visible como base.
-      alturaPct: d.cantidad === 0 ? 3 : Math.max(6, (d.cantidad / maximo) * 100)
+      alturaPct: d.cantidad === 0 ? 3 : Math.max(6, (d.cantidad / maximo) * 85)
     }));
   });
 

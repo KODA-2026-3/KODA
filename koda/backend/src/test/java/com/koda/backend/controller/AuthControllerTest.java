@@ -3,6 +3,9 @@ package com.koda.backend.controller;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,9 +21,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koda.backend.dto.LoginRequest;
 import com.koda.backend.dto.LoginResponse;
 import com.koda.backend.dto.UsuarioResponse;
+import com.koda.backend.exception.CodigoRecuperacionInvalidoException;
 import com.koda.backend.exception.CredencialesInvalidasException;
 import com.koda.backend.security.JwtService;
 import com.koda.backend.service.AuthService;
+import com.koda.backend.service.RecuperacionContrasenaService;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -36,7 +41,45 @@ class AuthControllerTest {
     private AuthService authService;
 
     @MockBean
+    private RecuperacionContrasenaService recuperacion;
+
+    @MockBean
     private JwtService jwtService;
+
+    @Test
+    @DisplayName("POST /auth/recuperacion responde 204 y delega en el servicio")
+    void solicitarRecuperacion_correoValido_retorna204() throws Exception {
+        mockMvc.perform(post("/auth/recuperacion")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"correo\":\"mgarcia@hospital.org\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(recuperacion).solicitar("mgarcia@hospital.org");
+    }
+
+    @Test
+    @DisplayName("POST /auth/recuperacion/restablecer con código inválido responde 400")
+    void restablecer_codigoInvalido_retorna400() throws Exception {
+        doThrow(new CodigoRecuperacionInvalidoException())
+                .when(recuperacion).restablecer(any(), any(), any());
+
+        mockMvc.perform(post("/auth/recuperacion/restablecer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"correo\":\"mgarcia@hospital.org\",\"codigo\":\"123456\",\"nuevaContrasena\":\"NuevaClave1!\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").exists());
+    }
+
+    @Test
+    @DisplayName("POST /auth/recuperacion/restablecer rechaza una contraseña corta")
+    void restablecer_contrasenaCorta_retorna400() throws Exception {
+        mockMvc.perform(post("/auth/recuperacion/restablecer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"correo\":\"mgarcia@hospital.org\",\"codigo\":\"123456\",\"nuevaContrasena\":\"corta\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(recuperacion, never()).restablecer(any(), any(), any());
+    }
 
     @Test
     @DisplayName("POST /auth/login con credenciales válidas debe retornar 200 OK y token")

@@ -38,7 +38,7 @@ class EstadisticasServiceTest {
     }
 
     @Test
-    @DisplayName("Debe calcular estadísticas completas rellenando grados KL del 0 al 4 y 14 días")
+    @DisplayName("Debe calcular estadísticas completas rellenando grados KL del 0 al 4 y 7 días")
     void obtener_retornaEstadisticasConDistribucionCompleta() {
         when(repositorioAnalisis.count()).thenReturn(150L);
         when(repositorioAnalisis.countByFechaCreacionBetween(any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -74,10 +74,10 @@ class EstadisticasServiceTest {
         assertThat(resultado.distribucionKL().get(3)).isEqualTo(new ConteoGradoKL(3, 50L));
         assertThat(resultado.distribucionKL().get(4)).isEqualTo(new ConteoGradoKL(4, 0L));
 
-        // Historial por dia debe tener exactamente 14 dias
-        assertThat(resultado.radiografiasPorDia()).hasSize(14);
-        assertThat(resultado.radiografiasPorDia().get(13).fecha()).isEqualTo(hoy);
-        assertThat(resultado.radiografiasPorDia().get(13).cantidad()).isEqualTo(12L);
+        // Historial por dia debe tener exactamente 7 dias
+        assertThat(resultado.radiografiasPorDia()).hasSize(7);
+        assertThat(resultado.radiografiasPorDia().get(6).fecha()).isEqualTo(hoy);
+        assertThat(resultado.radiografiasPorDia().get(6).cantidad()).isEqualTo(12L);
         assertThat(resultado.radiografiasPorDia().get(0).cantidad()).isEqualTo(0L);
     }
 

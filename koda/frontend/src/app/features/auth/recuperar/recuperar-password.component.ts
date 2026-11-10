@@ -75,8 +75,14 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
               Recuperar contraseña
             </h2>
             <p class="mt-2 text-sm text-slate-600">
-              Ingrese su correo institucional. Le enviaremos un enlace para restablecer el acceso.
+              Ingrese su correo institucional. Le enviaremos un código para restablecer el acceso.
             </p>
+
+            @if (error()) {
+              <p class="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+                {{ error() }}
+              </p>
+            }
 
             <form class="mt-8 space-y-5" [formGroup]="formIdentidad" (ngSubmit)="enviarIdentidad()">
               <div>
@@ -101,7 +107,7 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
               </div>
 
               <button type="submit" class="btn-primary w-full py-3" [disabled]="cargando()">
-                {{ cargando() ? 'Enviando…' : 'Enviar enlace de recuperación' }}
+                {{ cargando() ? 'Enviando…' : 'Enviar código de recuperación' }}
               </button>
               <a routerLink="/login" class="btn-secondary w-full py-3">Volver al inicio de sesión</a>
             </form>
@@ -110,10 +116,47 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
               Restablecer contraseña
             </h2>
             <p class="mt-2 text-sm text-slate-600">
-              Defina una contraseña segura que cumpla con los estándares de seguridad.
+              Si el correo pertenece a una cuenta activa, le enviamos un código de 6 dígitos. Vence en
+              15 minutos.
             </p>
 
+            @if (error()) {
+              <p class="mt-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+                {{ error() }}
+              </p>
+            }
+
             <form class="mt-8 space-y-5" [formGroup]="formContrasena" (ngSubmit)="actualizar()">
+              <div>
+                <label class="field-label" for="codigo">Código de verificación</label>
+                <input
+                  id="codigo"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="6"
+                  formControlName="codigo"
+                  autocomplete="one-time-code"
+                  placeholder="000000"
+                  class="field-input tracking-widest"
+                />
+                @if (formContrasena.controls.codigo.touched && formContrasena.controls.codigo.invalid) {
+                  <p class="field-error">Ingrese los 6 dígitos del código.</p>
+                }
+                <button
+                  type="button"
+                  class="mt-2 text-xs font-semibold text-navy-700 hover:underline disabled:opacity-50"
+                  [disabled]="cargando()"
+                  (click)="reenviar()"
+                >
+                  Enviar otro código
+                </button>
+                @if (reenviado()) {
+                  <p class="mt-1 text-xs text-emerald-700" role="status">
+                    Si pasó al menos un minuto desde el anterior, le enviamos un código nuevo.
+                  </p>
+                }
+              </div>
+
               <div>
                 <label class="field-label" for="nueva">Nueva contraseña</label>
                 <div class="relative">
@@ -269,6 +312,8 @@ export class RecuperarPasswordComponent {
 
   readonly paso = signal(1);
   readonly cargando = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly reenviado = signal(false);
   readonly exito = signal(false);
   readonly segundos = signal(3);
   readonly verNueva = signal(false);
@@ -281,6 +326,7 @@ export class RecuperarPasswordComponent {
 
   readonly formContrasena = this.fb.nonNullable.group(
     {
+      codigo: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
       nueva: ['', [Validators.required, Validators.minLength(8)]],
       confirmacion: ['', Validators.required]
     },
@@ -320,9 +366,26 @@ export class RecuperarPasswordComponent {
       return;
     }
     this.cargando.set(true);
-    this.auth.solicitarRecuperacion(this.formIdentidad.controls.correo.value).subscribe(() => {
-      this.cargando.set(false);
-      this.paso.set(2);
+    this.error.set(null);
+    this.auth.solicitarRecuperacion(this.formIdentidad.controls.correo.value).subscribe({
+      next: () => {
+        this.cargando.set(false);
+        this.paso.set(2);
+      },
+      error: (e: Error) => this.mostrarError(e)
+    });
+  }
+
+  reenviar(): void {
+    this.cargando.set(true);
+    this.error.set(null);
+    this.reenviado.set(false);
+    this.auth.solicitarRecuperacion(this.formIdentidad.controls.correo.value).subscribe({
+      next: () => {
+        this.cargando.set(false);
+        this.reenviado.set(true);
+      },
+      error: (e: Error) => this.mostrarError(e)
     });
   }
 
@@ -332,18 +395,28 @@ export class RecuperarPasswordComponent {
       return;
     }
     this.cargando.set(true);
+    this.error.set(null);
 
     this.auth
       .restablecerContrasena(
         this.formIdentidad.controls.correo.value,
+        this.formContrasena.controls.codigo.value,
         this.formContrasena.controls.nueva.value
       )
-      .subscribe(() => {
-        this.cargando.set(false);
-        this.paso.set(3);
-        this.exito.set(true);
-        this.iniciarCuentaRegresiva();
+      .subscribe({
+        next: () => {
+          this.cargando.set(false);
+          this.paso.set(3);
+          this.exito.set(true);
+          this.iniciarCuentaRegresiva();
+        },
+        error: (e: Error) => this.mostrarError(e)
       });
+  }
+
+  private mostrarError(error: Error): void {
+    this.cargando.set(false);
+    this.error.set(error.message);
   }
 
   private iniciarCuentaRegresiva(): void {
