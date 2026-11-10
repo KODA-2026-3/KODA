@@ -529,6 +529,7 @@ export class ResultadoComponent {
         medico: usuario,
         generadoPor: usuario,
         intensidadHeatmap: this.intensidad(),
+        contraste: this.contraste(),
         textoConfianza: this.textoConfianza(analisis.confianza),
         sinValidezClinica: this.sinValidezClinica(analisis)
       });
