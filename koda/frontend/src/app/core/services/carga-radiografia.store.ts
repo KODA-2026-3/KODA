@@ -1,16 +1,25 @@
 import { Injectable, signal } from '@angular/core';
 
+import { Lateralidad } from '../models/analisis.model';
+
 /** Radiografia seleccionada, compartida entre la pantalla de carga y la de progreso. */
 @Injectable({ providedIn: 'root' })
 export class CargaRadiografiaStore {
   private readonly _archivo = signal<File | null>(null);
   private readonly _vistaPrevia = signal<string | null>(null);
   private readonly _error = signal<string | null>(null);
+  private readonly _lateralidad = signal<Lateralidad | null>(null);
 
   readonly archivo = this._archivo.asReadonly();
   readonly vistaPrevia = this._vistaPrevia.asReadonly();
   /** Motivo por el que fallo el ultimo analisis, para mostrarlo al volver a la carga. */
   readonly error = this._error.asReadonly();
+  /** Rodilla indicada por el medico; obligatoria para analizar. */
+  readonly lateralidad = this._lateralidad.asReadonly();
+
+  seleccionarLateralidad(lateralidad: Lateralidad): void {
+    this._lateralidad.set(lateralidad);
+  }
 
   establecer(archivo: File, vistaPrevia: string): void {
     this.limpiar();
@@ -35,5 +44,6 @@ export class CargaRadiografiaStore {
     this._archivo.set(null);
     this._vistaPrevia.set(null);
     this._error.set(null);
+    this._lateralidad.set(null);
   }
 }

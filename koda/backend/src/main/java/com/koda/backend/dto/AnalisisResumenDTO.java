@@ -3,6 +3,7 @@ package com.koda.backend.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.koda.backend.model.Lateralidad;
 import com.koda.backend.model.MetadatoAnalisis;
 
 /**
@@ -11,6 +12,7 @@ import com.koda.backend.model.MetadatoAnalisis;
  *
  * @param probabilidades grados KL 0 a 4; vacia en analisis anteriores a que se registraran
  * @param imagenExpiraEn nulo si la imagen ya no se conserva
+ * @param lateralidad nula en analisis anteriores a que se registrara
  */
 public record AnalisisResumenDTO(
         Long analisisId,
@@ -22,7 +24,8 @@ public record AnalisisResumenDTO(
         String modelo,
         long tiempoProcesamientoMs,
         boolean imagenDisponible,
-        LocalDateTime imagenExpiraEn) {
+        LocalDateTime imagenExpiraEn,
+        Lateralidad lateralidad) {
 
     public static AnalisisResumenDTO desde(MetadatoAnalisis registro, LocalDateTime imagenExpiraEn) {
         return new AnalisisResumenDTO(
@@ -35,6 +38,7 @@ public record AnalisisResumenDTO(
                 registro.getModelo(),
                 registro.getTiempoProcesamientoMs(),
                 imagenExpiraEn != null,
-                imagenExpiraEn);
+                imagenExpiraEn,
+                registro.getLateralidad());
     }
 }

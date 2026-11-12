@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -49,6 +51,11 @@ public class MetadatoAnalisis {
     @Column(name = "probabilidades")
     private String probabilidades;
 
+    /** Nula en los analisis anteriores a V7. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "lateralidad")
+    private Lateralidad lateralidad;
+
     protected MetadatoAnalisis() {
         // requerido por JPA
     }
@@ -71,6 +78,18 @@ public class MetadatoAnalisis {
         this.tiempoProcesamientoMs = tiempoProcesamientoMs;
         this.modelo = modelo;
         this.fechaCreacion = fechaCreacion;
+    }
+
+    public MetadatoAnalisis(String usuarioId, String nombreArchivo, Lateralidad lateralidad, int gradoKL,
+                            double confianza, List<Double> probabilidades, long tiempoProcesamientoMs,
+                            String modelo, LocalDateTime fechaCreacion) {
+        this(usuarioId, nombreArchivo, gradoKL, confianza, probabilidades, tiempoProcesamientoMs, modelo,
+                fechaCreacion);
+        this.lateralidad = lateralidad;
+    }
+
+    public Lateralidad getLateralidad() {
+        return lateralidad;
     }
 
     public Long getId() {

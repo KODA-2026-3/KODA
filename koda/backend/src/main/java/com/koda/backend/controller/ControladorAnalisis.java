@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.koda.backend.dto.AnalisisResumenDTO;
 import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.model.ImagenAnalisis;
+import com.koda.backend.model.Lateralidad;
 import com.koda.backend.service.HistorialAnalisisService;
 import com.koda.backend.service.OrquestadorAnalisisService;
 
@@ -37,8 +38,9 @@ public class ControladorAnalisis {
     }
 
     @PostMapping(path = "/predict", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResultadoDTO analizar(@RequestParam("imagen") MultipartFile imagen, Principal usuario) {
-        return orquestador.procesarRadiografia(imagen, usuario.getName());
+    public ResultadoDTO analizar(@RequestParam("imagen") MultipartFile imagen,
+                                 @RequestParam("lateralidad") Lateralidad lateralidad, Principal usuario) {
+        return orquestador.procesarRadiografia(imagen, lateralidad, usuario.getName());
     }
 
     @GetMapping("/analisis")

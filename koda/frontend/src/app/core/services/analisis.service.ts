@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, forkJoin, from, map, of, switchMap, tap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Analisis, GradoKL } from '../models/analisis.model';
+import { Analisis, GradoKL, Lateralidad } from '../models/analisis.model';
 
 /** Respuesta de POST /predict (ResultadoDTO del backend). */
 interface ResultadoDTO {
@@ -19,6 +19,7 @@ interface ResultadoDTO {
   nombreArchivo: string;
   tiempoProcesamientoMs: number;
   imagenExpiraEn: string;
+  lateralidad: Lateralidad;
 }
 
 /** Analisis del historial: GET /analisis y GET /analisis/{id} (AnalisisResumenDTO). */
@@ -34,6 +35,8 @@ interface AnalisisResumenDTO {
   tiempoProcesamientoMs: number;
   imagenDisponible: boolean;
   imagenExpiraEn: string | null;
+  /** Nula en los analisis anteriores a que se registrara. */
+  lateralidad: Lateralidad | null;
 }
 
 /**
@@ -107,9 +110,10 @@ export class AnalisisService {
   }
 
   /** Envia la radiografia al backend y devuelve el analisis ya registrado. */
-  analizar(archivo: File): Observable<Analisis> {
+  analizar(archivo: File, lateralidad: Lateralidad): Observable<Analisis> {
     const cuerpo = new FormData();
     cuerpo.append('imagen', archivo, archivo.name);
+    cuerpo.append('lateralidad', lateralidad);
 
     // La imagen original se conserva como data URL: el resultado debe poder
     // mostrarla aunque la pantalla de carga ya haya liberado su vista previa.
@@ -169,7 +173,8 @@ export class AnalisisService {
         modelo: r.prediccion.modelo,
         tiempoProcesamientoMs: r.tiempoProcesamientoMs,
         imagenDisponible: true,
-        imagenExpiraEn: r.imagenExpiraEn
+        imagenExpiraEn: r.imagenExpiraEn,
+        lateralidad: r.lateralidad
       }),
       imagenOriginal,
       heatmap: `data:image/png;base64,${r.prediccion.heatmapBase64}`
@@ -185,6 +190,7 @@ export class AnalisisService {
       fecha: r.fechaAnalisis.slice(0, 10),
       fechaProcesamiento: r.fechaAnalisis,
       archivo: r.nombreArchivo,
+      lateralidad: r.lateralidad ?? undefined,
       grado,
       // Se toma del mismo reparto que las barras, para que el anillo y la
       // barra del grado predicho muestren el mismo numero.

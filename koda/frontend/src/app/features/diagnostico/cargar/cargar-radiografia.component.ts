@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { Lateralidad } from '../../../core/models/analisis.model';
 import { CargaRadiografiaStore } from '../../../core/services/carga-radiografia.store';
 import { ConfiguracionService } from '../../../core/services/configuracion.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -99,6 +100,30 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
                 </button>
               </div>
             </div>
+
+            <fieldset class="mt-5 border-t border-surface-border pt-5">
+              <legend class="field-label">¿De qué rodilla es la radiografía?</legend>
+              <div class="mt-2 grid grid-cols-2 gap-3 sm:max-w-sm">
+                @for (opcion of opcionesLateralidad; track opcion.valor) {
+                  <button
+                    type="button"
+                    class="rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors"
+                    [class]="
+                      lateralidad() === opcion.valor
+                        ? 'border-navy-700 bg-navy-700 text-white'
+                        : 'border-surface-border bg-white text-navy-900 hover:border-navy-400'
+                    "
+                    [attr.aria-pressed]="lateralidad() === opcion.valor"
+                    (click)="seleccionarLateralidad(opcion.valor)"
+                  >
+                    {{ opcion.etiqueta }}
+                  </button>
+                }
+              </div>
+              @if (faltaLateralidad()) {
+                <p class="field-error">Seleccione la rodilla antes de analizar.</p>
+              }
+            </fieldset>
           </div>
 
           <button type="button" class="btn-primary mt-6 w-full py-3.5" (click)="analizar()">
@@ -124,6 +149,12 @@ export class CargarRadiografiaComponent {
   readonly accept = computed(() => this.config().formatosAceptados.join(','));
   readonly archivo = this.store.archivo;
   readonly vistaPrevia = this.store.vistaPrevia;
+  readonly lateralidad = this.store.lateralidad;
+  readonly faltaLateralidad = signal(false);
+  readonly opcionesLateralidad: { valor: Lateralidad; etiqueta: string }[] = [
+    { valor: 'IZQUIERDA', etiqueta: 'Rodilla izquierda' },
+    { valor: 'DERECHA', etiqueta: 'Rodilla derecha' }
+  ];
   // Si el analisis anterior fallo, el motivo llega desde la pantalla de progreso.
   readonly error = signal<string | null>(this.store.error());
 
@@ -160,10 +191,20 @@ export class CargarRadiografiaComponent {
     this.error.set(null);
   }
 
+  seleccionarLateralidad(lateralidad: Lateralidad): void {
+    this.store.seleccionarLateralidad(lateralidad);
+    this.faltaLateralidad.set(false);
+  }
+
   analizar(): void {
-    if (this.archivo()) {
-      void this.router.navigate(['/app/analizando']);
+    if (!this.archivo()) {
+      return;
     }
+    if (!this.lateralidad()) {
+      this.faltaLateralidad.set(true);
+      return;
+    }
+    void this.router.navigate(['/app/analizando']);
   }
 
   tamanoMb(archivo: File): string {

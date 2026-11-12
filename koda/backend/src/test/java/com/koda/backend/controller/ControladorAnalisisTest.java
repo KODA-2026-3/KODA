@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.koda.backend.dto.AnalisisResumenDTO;
 import com.koda.backend.dto.PrediccionDTO;
 import com.koda.backend.dto.ResultadoDTO;
+import com.koda.backend.model.Lateralidad;
 import com.koda.backend.security.JwtService;
 import com.koda.backend.service.HistorialAnalisisService;
 import com.koda.backend.service.OrquestadorAnalisisService;
@@ -54,20 +55,46 @@ class ControladorAnalisisTest {
         PrediccionDTO prediccion = new PrediccionDTO(
                 1, 0.92, List.of(0.02, 0.92, 0.04, 0.01, 0.01), "heatmapBase64", "simulado");
         ResultadoDTO resultado = new ResultadoDTO(
-                101L, prediccion, LocalDateTime.now(), "rx.png", 230L, LocalDateTime.now().plusDays(7));
+                101L, prediccion, LocalDateTime.now(), "rx.png", 230L, LocalDateTime.now().plusDays(7),
+                Lateralidad.IZQUIERDA);
 
-        when(orquestador.procesarRadiografia(any(), eq("mgarcia@hospital.org"))).thenReturn(resultado);
+        when(orquestador.procesarRadiografia(any(), eq(Lateralidad.IZQUIERDA), eq("mgarcia@hospital.org")))
+                .thenReturn(resultado);
 
         Principal principal = () -> "mgarcia@hospital.org";
 
         mockMvc.perform(multipart("/predict")
                         .file(imagen)
+                        .param("lateralidad", "IZQUIERDA")
                         .principal(principal))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lateralidad").value("IZQUIERDA"))
                 .andExpect(jsonPath("$.analisisId").value(101))
                 .andExpect(jsonPath("$.prediccion.gradoKL").value(1))
                 .andExpect(jsonPath("$.prediccion.confianza").value(0.92))
                 .andExpect(jsonPath("$.nombreArchivo").value("rx.png"));
+    }
+
+    @Test
+    @DisplayName("POST /predict sin indicar la rodilla responde 400 con un mensaje claro")
+    void analizar_sinLateralidad_retorna400() throws Exception {
+        MockMultipartFile imagen = new MockMultipartFile(
+                "imagen", "rx.png", "image/png", new byte[]{1, 2, 3, 4});
+
+        mockMvc.perform(multipart("/predict").file(imagen).principal(() -> "mgarcia@hospital.org"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").value("Indique si la radiografía es de la rodilla izquierda o derecha."));
+    }
+
+    @Test
+    @DisplayName("POST /predict con una rodilla inválida responde 400")
+    void analizar_lateralidadInvalida_retorna400() throws Exception {
+        MockMultipartFile imagen = new MockMultipartFile(
+                "imagen", "rx.png", "image/png", new byte[]{1, 2, 3, 4});
+
+        mockMvc.perform(multipart("/predict").file(imagen).param("lateralidad", "CENTRO")
+                        .principal(() -> "mgarcia@hospital.org"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -76,7 +103,7 @@ class ControladorAnalisisTest {
         LocalDateTime ahora = LocalDateTime.now();
         AnalisisResumenDTO item = new AnalisisResumenDTO(
                 55L, ahora, "rx_55.png", 2, 0.88, List.of(0.01, 0.05, 0.88, 0.04, 0.02),
-                "diko_stage2", 420L, true, ahora.plusDays(7));
+                "diko_stage2", 420L, true, ahora.plusDays(7), Lateralidad.DERECHA);
 
         when(historial.listar("mgarcia@hospital.org")).thenReturn(List.of(item));
 
@@ -85,7 +112,8 @@ class ControladorAnalisisTest {
         mockMvc.perform(get("/analisis").principal(principal))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].analisisId").value(55))
-                .andExpect(jsonPath("$[0].gradoKL").value(2));
+                .andExpect(jsonPath("$[0].gradoKL").value(2))
+                .andExpect(jsonPath("$[0].lateralidad").value("DERECHA"));
     }
 
     @Test

@@ -131,6 +131,9 @@ function seccionDatos(doc: jsPDF, datos: DatosReporte, y: number): number {
     ['Médico', datos.medico],
     ['Fecha de procesamiento', formatearFechaHora(analisis.fechaProcesamiento)],
     ['Archivo', analisis.archivo],
+    ...(analisis.lateralidad
+      ? [['Rodilla', analisis.lateralidad === 'IZQUIERDA' ? 'Izquierda' : 'Derecha'] as [string, string]]
+      : []),
     ['Modelo', analisis.modelo]
   ];
 

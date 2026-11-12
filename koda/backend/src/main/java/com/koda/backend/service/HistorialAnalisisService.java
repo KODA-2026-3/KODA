@@ -31,6 +31,7 @@ import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.exception.ImagenInvalidaException;
 import com.koda.backend.exception.RecursoNoEncontradoException;
 import com.koda.backend.model.ImagenAnalisis;
+import com.koda.backend.model.Lateralidad;
 import com.koda.backend.model.MetadatoAnalisis;
 import com.koda.backend.repository.RepositorioAnalisis;
 import com.koda.backend.repository.RepositorioImagenAnalisis;
@@ -65,8 +66,8 @@ public class HistorialAnalisisService {
 
     /** Guarda el registro y la imagen juntos: o quedan los dos, o ninguno. */
     @Transactional
-    public ResultadoDTO registrar(String correoUsuario, ImagenPreprocesada imagen, PrediccionDTO prediccion,
-                                  long tiempoMs) {
+    public ResultadoDTO registrar(String correoUsuario, ImagenPreprocesada imagen, Lateralidad lateralidad,
+                                  PrediccionDTO prediccion, long tiempoMs) {
         LocalDateTime ahora = LocalDateTime.now();
         // Si la cuenta dejo de existir durante el analisis, el registro se guarda sin usuario.
         String usuarioId = idDe(correoUsuario);
@@ -74,6 +75,7 @@ public class HistorialAnalisisService {
         MetadatoAnalisis registro = registros.save(new MetadatoAnalisis(
                 usuarioId,
                 imagen.nombreArchivo(),
+                lateralidad,
                 prediccion.gradoKL(),
                 prediccion.confianza(),
                 prediccion.probabilidades(),
@@ -90,7 +92,7 @@ public class HistorialAnalisisService {
                 expiraEn));
 
         return new ResultadoDTO(registro.getId(), prediccion, ahora, registro.getNombreArchivo(), tiempoMs,
-                expiraEn);
+                expiraEn, lateralidad);
     }
 
     @Transactional(readOnly = true)
