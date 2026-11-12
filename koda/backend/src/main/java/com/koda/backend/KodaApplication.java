@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 // Tareas programadas: limpieza de las radiografias vencidas (HistorialAnalisisService).
 @EnableScheduling
-// Envio de correos sin retener la peticion (NotificadorRecuperacion).
+// Envio de correos sin retener la peticion (NotificadorCorreo).
 @EnableAsync
 public class KodaApplication {
 

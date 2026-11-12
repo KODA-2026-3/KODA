@@ -27,6 +27,7 @@ import com.koda.backend.dto.ImagenPreprocesada;
 import com.koda.backend.dto.PrediccionDTO;
 import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.exception.ImagenInvalidaException;
+import com.koda.backend.model.Lateralidad;
 import com.koda.backend.ia.IModuloIAClient;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,11 +82,14 @@ class OrquestadorAnalisisServiceTest {
                 ahora,
                 "radiografia_rodilla.png",
                 150L,
-                ahora.plusDays(7));
-        when(historial.registrar(eq("mgarcia@hospital.org"), any(ImagenPreprocesada.class), eq(prediccionDTO), anyLong()))
+                ahora.plusDays(7),
+                Lateralidad.IZQUIERDA,
+                "Texto del grado 2");
+        when(historial.registrar(eq("mgarcia@hospital.org"), any(ImagenPreprocesada.class), eq(Lateralidad.IZQUIERDA),
+                eq(prediccionDTO), anyLong()))
                 .thenReturn(esperado);
 
-        ResultadoDTO resultado = orquestador.procesarRadiografia(archivo, "mgarcia@hospital.org");
+        ResultadoDTO resultado = orquestador.procesarRadiografia(archivo, Lateralidad.IZQUIERDA, "mgarcia@hospital.org");
 
         assertThat(resultado).isNotNull();
         assertThat(resultado.nombreArchivo()).isEqualTo("radiografia_rodilla.png");
@@ -93,7 +97,8 @@ class OrquestadorAnalisisServiceTest {
         assertThat(resultado.prediccion().confianza()).isEqualTo(0.85);
         assertThat(resultado.prediccion().modelo()).isEqualTo("simulado");
 
-        verify(historial).registrar(eq("mgarcia@hospital.org"), any(ImagenPreprocesada.class), eq(prediccionDTO), anyLong());
+        verify(historial).registrar(eq("mgarcia@hospital.org"), any(ImagenPreprocesada.class), eq(Lateralidad.IZQUIERDA),
+                eq(prediccionDTO), anyLong());
     }
 
     @Test
@@ -104,7 +109,7 @@ class OrquestadorAnalisisServiceTest {
 
         when(validador.validarFormatoYTamano(archivo)).thenReturn("image/png");
 
-        assertThatThrownBy(() -> orquestador.procesarRadiografia(archivo, "mgarcia@hospital.org"))
+        assertThatThrownBy(() -> orquestador.procesarRadiografia(archivo, Lateralidad.IZQUIERDA, "mgarcia@hospital.org"))
                 .isInstanceOf(ImagenInvalidaException.class)
                 .hasMessageContaining("no es una imagen válida o está dañado");
     }

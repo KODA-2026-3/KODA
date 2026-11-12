@@ -18,6 +18,7 @@ import com.koda.backend.dto.ImagenPreprocesada;
 import com.koda.backend.dto.PrediccionDTO;
 import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.exception.ImagenInvalidaException;
+import com.koda.backend.model.Lateralidad;
 import com.koda.backend.ia.IModuloIAClient;
 
 /**
@@ -45,7 +46,7 @@ public class OrquestadorAnalisisService {
         this.historial = historial;
     }
 
-    public ResultadoDTO procesarRadiografia(MultipartFile archivo, String correoUsuario) {
+    public ResultadoDTO procesarRadiografia(MultipartFile archivo, Lateralidad lateralidad, String correoUsuario) {
         long inicio = System.nanoTime();
 
         String tipoContenido = validador.validarFormatoYTamano(archivo);
@@ -56,7 +57,7 @@ public class OrquestadorAnalisisService {
         PrediccionDTO prediccion = iaClient.solicitarInferencia(imagen);
 
         long tiempoMs = (System.nanoTime() - inicio) / 1_000_000;
-        ResultadoDTO resultado = historial.registrar(correoUsuario, imagen, prediccion, tiempoMs);
+        ResultadoDTO resultado = historial.registrar(correoUsuario, imagen, lateralidad, prediccion, tiempoMs);
 
         log.info("Analisis {} completado: grado KL {}, confianza {}, {} ms, modelo {}",
                 resultado.analisisId(), prediccion.gradoKL(), prediccion.confianza(), tiempoMs,

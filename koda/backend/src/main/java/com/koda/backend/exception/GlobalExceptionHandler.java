@@ -3,8 +3,10 @@ package com.koda.backend.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.koda.backend.dto.ErrorResponse;
@@ -57,6 +59,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ModeloInferenciaException.class)
     public ResponseEntity<ErrorResponse> errorModelo(ModeloInferenciaException e) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ErrorResponse(e.getMessage()));
+    }
+
+    /** POST /predict sin la rodilla o con un valor distinto de IZQUIERDA o DERECHA. */
+    @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<ErrorResponse> parametroInvalido(Exception e) {
+        String parametro = e instanceof MissingServletRequestParameterException faltante
+                ? faltante.getParameterName()
+                : ((MethodArgumentTypeMismatchException) e).getName();
+        String mensaje = "lateralidad".equals(parametro)
+                ? "Indique si la radiografía es de la rodilla izquierda o derecha."
+                : "La solicitud tiene un dato inválido o incompleto: " + parametro + ".";
+        return ResponseEntity.badRequest().body(new ErrorResponse(mensaje));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

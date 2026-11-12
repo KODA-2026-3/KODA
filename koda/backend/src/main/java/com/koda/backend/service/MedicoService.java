@@ -21,10 +21,12 @@ public class MedicoService {
 
     private final UsuarioRepository repositorio;
     private final PasswordEncoder encoder;
+    private final NotificadorCorreo notificador;
 
-    public MedicoService(UsuarioRepository repositorio, PasswordEncoder encoder) {
+    public MedicoService(UsuarioRepository repositorio, PasswordEncoder encoder, NotificadorCorreo notificador) {
         this.repositorio = repositorio;
         this.encoder = encoder;
+        this.notificador = notificador;
     }
 
     @Transactional(readOnly = true)
@@ -52,7 +54,9 @@ public class MedicoService {
                 solicitud.institucion());
         medico.setTelefono(solicitud.telefono());
 
-        return MedicoResponse.desde(repositorio.save(medico));
+        MedicoResponse creado = MedicoResponse.desde(repositorio.save(medico));
+        notificador.enviarCredenciales(creado.correo(), creado.nombre(), solicitud.contrasenaTemporal());
+        return creado;
     }
 
     @Transactional

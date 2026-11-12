@@ -26,6 +26,7 @@ import com.koda.backend.dto.ImagenPreprocesada;
 import com.koda.backend.dto.PrediccionDTO;
 import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.exception.RecursoNoEncontradoException;
+import com.koda.backend.model.Lateralidad;
 import com.koda.backend.repository.RepositorioAnalisis;
 
 /**
@@ -57,6 +58,14 @@ class HistorialAnalisisServiceTest {
         assertThat(resumen.imagenDisponible()).isTrue();
         assertThat(resumen.gradoKL()).isEqualTo(3);
         assertThat(resumen.probabilidades()).containsExactly(0.0, 0.05, 0.1, 0.8, 0.05);
+        assertThat(resultado.lateralidad()).isEqualTo(Lateralidad.DERECHA);
+        assertThat(resumen.lateralidad()).isEqualTo(Lateralidad.DERECHA);
+        assertThat(resultado.hallazgos()).startsWith("Múltiples osteofitos moderados");
+        assertThat(resumen.hallazgos()).isEqualTo(resultado.hallazgos());
+
+        historial.actualizarHallazgos(resultado.analisisId(), MEDICO, "  Hallazgos revisados por el médico.  ");
+        assertThat(historial.obtener(resultado.analisisId(), MEDICO).hallazgos())
+                .isEqualTo("Hallazgos revisados por el médico.");
         assertThat(historial.imagen(resultado.analisisId(), MEDICO).getHeatmap()).isEqualTo(heatmap());
         assertThat(historial.listar(MEDICO)).extracting(AnalisisResumenDTO::analisisId)
                 .contains(resultado.analisisId());
@@ -119,7 +128,7 @@ class HistorialAnalisisServiceTest {
         PrediccionDTO prediccion = new PrediccionDTO(3, 0.8, List.of(0.0, 0.05, 0.1, 0.8, 0.05),
                 Base64.getEncoder().encodeToString(heatmap()), "diko_stage2");
         ImagenPreprocesada imagen = new ImagenPreprocesada(png(), "rodilla.png", "image/png", 64, 64);
-        return historial.registrar(MEDICO, imagen, prediccion, 1200);
+        return historial.registrar(MEDICO, imagen, Lateralidad.DERECHA, prediccion, 1200);
     }
 
     private static byte[] png() throws Exception {

@@ -106,7 +106,8 @@ export class ProcesandoComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const archivo = this.store.archivo();
-    if (!archivo) {
+    const lateralidad = this.store.lateralidad();
+    if (!archivo || !lateralidad) {
       void this.router.navigate(['/app/cargar']);
       return;
     }
@@ -117,7 +118,7 @@ export class ProcesandoComponent implements OnInit, OnDestroy {
     }, 130);
 
     this.analisisService
-      .analizar(archivo)
+      .analizar(archivo, lateralidad)
       .pipe(takeUntilDestroyed(this.destruir))
       .subscribe({
         next: (analisis) => {

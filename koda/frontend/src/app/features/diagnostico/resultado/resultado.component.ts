@@ -249,6 +249,47 @@ type Vista = 'ORIGINAL' | 'HEATMAP';
             @if (errorEliminar()) {
               <p class="mt-2 text-sm text-red-600" role="alert">{{ errorEliminar() }}</p>
             }
+
+            <!-- Se inicia con el texto del grado predicho; el medico puede ajustarlo. -->
+            <div class="card mt-4 px-5 py-4">
+              <label for="hallazgos" class="text-sm font-semibold text-navy-950">
+                Hallazgos radiográficos
+              </label>
+              <textarea
+                id="hallazgos"
+                rows="4"
+                maxlength="2000"
+                class="mt-2 w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-navy-700 focus:outline-none focus:ring-2 focus:ring-navy-700/20"
+                [value]="hallazgos()"
+                (input)="editarHallazgos($any($event.target).value)"
+              ></textarea>
+              <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <span
+                  class="text-xs"
+                  [class]="errorHallazgos() ? 'text-red-600' : 'text-slate-500'"
+                  [attr.role]="errorHallazgos() ? 'alert' : null"
+                  aria-live="polite"
+                >
+                  @if (errorHallazgos()) {
+                    {{ errorHallazgos() }}
+                  } @else if (hallazgos() !== a.hallazgos) {
+                    Cambios sin guardar · {{ hallazgos().length }}/2000
+                  } @else if (hallazgosGuardados()) {
+                    Hallazgos guardados en el análisis.
+                  } @else {
+                    {{ hallazgos().length }}/2000
+                  }
+                </span>
+                <button
+                  type="button"
+                  class="btn-primary px-4 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  [disabled]="guardandoHallazgos() || !hallazgos().trim() || hallazgos() === a.hallazgos"
+                  (click)="guardarHallazgos(a)"
+                >
+                  {{ guardandoHallazgos() ? 'Guardando…' : 'Guardar hallazgos' }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Panel de resultados -->
@@ -435,6 +476,11 @@ export class ResultadoComponent {
   readonly errorEliminar = signal('');
   readonly generandoReporte = signal(false);
   readonly errorReporte = signal('');
+  /** Texto del cuadro de hallazgos; puede diferir de lo guardado hasta pulsar Guardar. */
+  readonly hallazgos = signal('');
+  readonly guardandoHallazgos = signal(false);
+  readonly hallazgosGuardados = signal(false);
+  readonly errorHallazgos = signal('');
 
   /** undefined mientras carga; null si el analisis no existe. */
   readonly analisis = signal<Analisis | null | undefined>(undefined);
@@ -445,7 +491,35 @@ export class ResultadoComponent {
         switchMap((p) => this.servicio.obtener(p.get('id') ?? '')),
         takeUntilDestroyed()
       )
-      .subscribe((analisis) => this.analisis.set(analisis));
+      .subscribe((analisis) => {
+        this.analisis.set(analisis);
+        this.hallazgos.set(analisis?.hallazgos ?? '');
+        this.hallazgosGuardados.set(false);
+        this.errorHallazgos.set('');
+      });
+  }
+
+  editarHallazgos(texto: string): void {
+    this.hallazgos.set(texto);
+    this.hallazgosGuardados.set(false);
+    this.errorHallazgos.set('');
+  }
+
+  guardarHallazgos(analisis: Analisis): void {
+    this.guardandoHallazgos.set(true);
+    this.errorHallazgos.set('');
+    this.servicio.guardarHallazgos(analisis.id, this.hallazgos()).subscribe({
+      next: (guardados) => {
+        this.analisis.set({ ...analisis, hallazgos: guardados });
+        this.hallazgos.set(guardados);
+        this.hallazgosGuardados.set(true);
+        this.guardandoHallazgos.set(false);
+      },
+      error: (e: Error) => {
+        this.errorHallazgos.set(e.message);
+        this.guardandoHallazgos.set(false);
+      }
+    });
   }
 
   eliminarImagen(analisis: Analisis): void {
@@ -524,8 +598,9 @@ export class ResultadoComponent {
     this.generandoReporte.set(true);
     this.errorReporte.set('');
     try {
+      // El reporte lleva el texto que se ve en pantalla, aunque no se haya guardado.
       await descargarReportePdf({
-        analisis,
+        analisis: { ...analisis, hallazgos: this.hallazgos().trim() || analisis.hallazgos },
         medico: usuario,
         generadoPor: usuario,
         intensidadHeatmap: this.intensidad(),

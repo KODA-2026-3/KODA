@@ -72,8 +72,8 @@ export async function descargarReportePdf(datos: DatosReporte): Promise<void> {
   y = await seccionImagenes(doc, datos, y);
   y = asegurarEspacio(doc, y, 9 + 24);
   y = seccionResultado(doc, datos, y);
-  y = asegurarEspacio(doc, y, 9 + 5 * 8);
-  seccionDistribucion(doc, analisis, y);
+  y = asegurarEspacio(doc, y, 9 + 12);
+  seccionHallazgos(doc, analisis, y);
 
   pieDePagina(doc, datos.generadoPor, generadoEn);
   doc.save(`reporte-${analisis.id}-${analisis.fecha}.pdf`);
@@ -131,6 +131,9 @@ function seccionDatos(doc: jsPDF, datos: DatosReporte, y: number): number {
     ['Médico', datos.medico],
     ['Fecha de procesamiento', formatearFechaHora(analisis.fechaProcesamiento)],
     ['Archivo', analisis.archivo],
+    ...(analisis.lateralidad
+      ? [['Rodilla', analisis.lateralidad === 'IZQUIERDA' ? 'Izquierda' : 'Derecha'] as [string, string]]
+      : []),
     ['Modelo', analisis.modelo]
   ];
 
@@ -260,39 +263,28 @@ function seccionResultado(doc: jsPDF, datos: DatosReporte, y: number): number {
   return y + alto + 9;
 }
 
-function seccionDistribucion(doc: jsPDF, analisis: Analisis, y: number): number {
-  y = tituloSeccion(doc, 'Distribución de probabilidades por grado', y);
+function seccionHallazgos(doc: jsPDF, analisis: Analisis, y: number): number {
+  y = tituloSeccion(doc, 'Hallazgos radiográficos', y);
 
-  if (analisis.distribucion.length === 0) {
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...SLATE_600);
-    doc.text('No disponible: el análisis es anterior al registro de las probabilidades.', MARGEN, y + 2);
-    return y + 10;
-  }
-
-  const xBarra = MARGEN + 46;
-  const anchoBarra = ANCHO_UTIL - 46 - 18;
-  const altoFila = 8;
-
-  for (const { grado, probabilidad } of analisis.distribucion) {
-    const predicho = grado === analisis.grado;
-    const yTexto = y + 3.6;
-
-    doc.setFont('helvetica', predicho ? 'bold' : 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...(predicho ? NAVY_950 : SLATE_600));
-    doc.text(`G${grado}  ${ETIQUETAS_KL[grado]}`, MARGEN, yTexto);
-
-    doc.setFillColor(...SLATE_200);
-    doc.roundedRect(xBarra, y, anchoBarra, 4.5, 2.25, 2.25, 'F');
-    if (probabilidad > 0) {
-      doc.setFillColor(...COLOR_KL[grado]);
-      doc.roundedRect(xBarra, y, Math.max(4.5, (anchoBarra * probabilidad) / 100), 4.5, 2.25, 2.25, 'F');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...NAVY_950);
+  const altoLinea = 5;
+  const parrafos = analisis.hallazgos.split(/\r?\n/);
+  for (const parrafo of parrafos) {
+    const lineas: string[] = parrafo.trim() ? doc.splitTextToSize(parrafo, ANCHO_UTIL) : [''];
+    for (const linea of lineas) {
+      const yNueva = asegurarEspacio(doc, y, altoLinea);
+      if (yNueva !== y) {
+        // addPage reinicia el estilo del texto.
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...NAVY_950);
+      }
+      y = yNueva;
+      doc.text(linea, MARGEN, y + 3.5);
+      y += altoLinea;
     }
-
-    doc.text(`${probabilidad}%`, MARGEN + ANCHO_UTIL, yTexto, { align: 'right' });
-    y += altoFila;
   }
 
   return y;

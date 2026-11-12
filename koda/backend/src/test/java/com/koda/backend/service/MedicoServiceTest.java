@@ -10,7 +10,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,13 +36,16 @@ class MedicoServiceTest {
     @Mock
     private PasswordEncoder encoder;
 
+    @Mock
+    private NotificadorCorreo notificador;
+
     private MedicoService servicio;
 
     private Usuario medico;
 
     @BeforeEach
     void setUp() {
-        servicio = new MedicoService(repositorio, encoder);
+        servicio = new MedicoService(repositorio, encoder, notificador);
         medico = new Usuario(
                 "Dra. Maria Garcia",
                 "mgarcia@hospital.org",
@@ -117,6 +122,7 @@ class MedicoServiceTest {
         assertThat(response.usuario()).isEqualTo("jperez");
         assertThat(response.telefono()).isEqualTo("3001234567");
         verify(repositorio).save(any(Usuario.class));
+        verify(notificador).enviarCredenciales("jperez@hospital.org", "Dr. Juan Perez", "ClaveSegura123!");
     }
 
     @Test
@@ -135,6 +141,8 @@ class MedicoServiceTest {
         assertThatThrownBy(() -> servicio.crear(request))
                 .isInstanceOf(ConflictoException.class)
                 .hasMessageContaining("Ya existe una cuenta con ese correo");
+
+        verify(notificador, never()).enviarCredenciales(anyString(), anyString(), anyString());
     }
 
     @Test
