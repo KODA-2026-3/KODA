@@ -32,19 +32,15 @@ import { LogoKodaComponent } from '../../../shared/components/logo/logo-koda.com
           <app-logo-koda class="mb-8 block" [size]="88" />
           <h1 class="text-5xl font-extrabold tracking-tight">KODA</h1>
           <h2 class="mt-6 max-w-md text-xl font-semibold leading-snug text-navy-100">
-            Sistema de apoyo diagnóstico con inteligencia artificial
+            Plataforma de Apoyo Diagnóstico para la Osteoartritis de Rodilla a partir de Radiografías
           </h2>
           <p class="mt-4 max-w-md text-sm leading-relaxed text-navy-200">
-            Clasificación automática de severidad en artrosis de rodilla mediante la escala
-            Kellgren-Lawrence a partir de radiografías digitales.
+            KODA es una herramienta de apoyo al diagnóstico, no reemplaza la evaluación médica profesional.
           </p>
         </div>
-
-        <p class="relative flex items-start gap-2 text-xs leading-relaxed text-navy-200">
-          <app-icon name="shield" [size]="16" />
-          Cumplimiento estricto de estándares de privacidad de datos médicos HIPAA / GDPR.
-        </p>
       </section>
+
+        
 
       <!-- Formulario -->
       <section class="flex flex-col justify-center bg-white px-6 py-12 sm:px-16">
