@@ -34,6 +34,7 @@ services:
       MAIL_USER: ${MAIL_USER:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-no-reply@koda.local}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
     ports:
       - "8080:8080"
 

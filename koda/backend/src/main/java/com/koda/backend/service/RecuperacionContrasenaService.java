@@ -26,12 +26,12 @@ public class RecuperacionContrasenaService {
     private final UsuarioRepository usuarios;
     private final RepositorioCodigoRecuperacion codigos;
     private final PasswordEncoder encoder;
-    private final NotificadorRecuperacion notificador;
+    private final NotificadorCorreo notificador;
     private final int minutosVigencia;
     private final int segundosEntreCodigos;
 
     public RecuperacionContrasenaService(UsuarioRepository usuarios, RepositorioCodigoRecuperacion codigos,
-                                         PasswordEncoder encoder, NotificadorRecuperacion notificador,
+                                         PasswordEncoder encoder, NotificadorCorreo notificador,
                                          @Value("${koda.recuperacion.vigencia-minutos}") int minutosVigencia,
                                          @Value("${koda.recuperacion.espera-segundos}") int segundosEntreCodigos) {
         this.usuarios = usuarios;

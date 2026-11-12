@@ -68,8 +68,11 @@ koda:
     retencion-dias: ${RETENCION_DIAS:7}
     # Cada hora, en el minuto 0: borra las radiografias vencidas.
     limpieza-cron: "0 0 * * * *"
-  recuperacion:
+  correo:
     remitente: ${MAIL_FROM:no-reply@koda.local}
+    # Direccion de la aplicacion web que se incluye en los correos.
+    url-frontend: ${FRONTEND_URL:http://localhost:4200}
+  recuperacion:
     vigencia-minutos: 15
     # Espera minima entre codigos para la misma cuenta: evita llenarle el buzon.
     espera-segundos: 60

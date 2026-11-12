@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import com.koda.backend.model.Rol;
 import com.koda.backend.model.Usuario;
 import com.koda.backend.repository.UsuarioRepository;
-import com.koda.backend.service.NotificadorRecuperacion;
+import com.koda.backend.service.NotificadorCorreo;
 
 /** Flujo completo con la base real: cada prueba usa su propia cuenta para no afectar las sembradas. */
 class CP05RestablecerContrasenaTest extends AutenticacionTestBase {
@@ -33,7 +33,7 @@ class CP05RestablecerContrasenaTest extends AutenticacionTestBase {
     private static final String CONTRASENA_NUEVA = "Renovada2026!";
 
     @MockBean
-    private NotificadorRecuperacion notificador;
+    private NotificadorCorreo notificador;
 
     @Autowired
     private UsuarioRepository usuarios;

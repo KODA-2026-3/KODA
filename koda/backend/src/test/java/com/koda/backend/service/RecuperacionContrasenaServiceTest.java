@@ -48,7 +48,7 @@ class RecuperacionContrasenaServiceTest {
     private PasswordEncoder encoder;
 
     @Mock
-    private NotificadorRecuperacion notificador;
+    private NotificadorCorreo notificador;
 
     private RecuperacionContrasenaService servicio;
 
