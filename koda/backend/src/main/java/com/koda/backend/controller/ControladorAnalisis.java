@@ -3,6 +3,8 @@ package com.koda.backend.controller;
 import java.security.Principal;
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -10,10 +12,13 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.koda.backend.dto.ActualizarHallazgosRequest;
 import com.koda.backend.dto.AnalisisResumenDTO;
 import com.koda.backend.dto.ResultadoDTO;
 import com.koda.backend.model.ImagenAnalisis;
@@ -62,6 +67,13 @@ public class ControladorAnalisis {
     @GetMapping("/analisis/{id}/heatmap")
     public ResponseEntity<byte[]> heatmap(@PathVariable Long id, Principal usuario) {
         return sinCache(historial.imagen(id, usuario.getName()).getHeatmap(), MediaType.IMAGE_PNG);
+    }
+
+    @PutMapping("/analisis/{id}/hallazgos")
+    public AnalisisResumenDTO actualizarHallazgos(@PathVariable Long id,
+                                                  @Valid @RequestBody ActualizarHallazgosRequest solicitud,
+                                                  Principal usuario) {
+        return historial.actualizarHallazgos(id, usuario.getName(), solicitud.hallazgos());
     }
 
     @DeleteMapping("/analisis/{id}/imagen")

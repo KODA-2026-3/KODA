@@ -20,6 +20,7 @@ interface ResultadoDTO {
   tiempoProcesamientoMs: number;
   imagenExpiraEn: string;
   lateralidad: Lateralidad;
+  hallazgos: string;
 }
 
 /** Analisis del historial: GET /analisis y GET /analisis/{id} (AnalisisResumenDTO). */
@@ -37,6 +38,7 @@ interface AnalisisResumenDTO {
   imagenExpiraEn: string | null;
   /** Nula en los analisis anteriores a que se registrara. */
   lateralidad: Lateralidad | null;
+  hallazgos: string;
 }
 
 /**
@@ -130,6 +132,23 @@ export class AnalisisService {
     );
   }
 
+  /** Guarda los hallazgos radiograficos editados; devuelve el texto tal como quedo guardado. */
+  guardarHallazgos(id: string, hallazgos: string): Observable<string> {
+    return this.http
+      .put<AnalisisResumenDTO>(`${this.url}/${this.numeroDe(id)}/hallazgos`, { hallazgos })
+      .pipe(
+        map((r) => r.hallazgos),
+        tap((guardados) =>
+          this._analisis.update((lista) =>
+            lista.map((a) => (a.id === id ? { ...a, hallazgos: guardados } : a))
+          )
+        ),
+        catchError((error: unknown) =>
+          throwError(() => this.aError(error, 'No se pudieron guardar los hallazgos.'))
+        )
+      );
+  }
+
   /** Borra la radiografia y el mapa de calor antes del plazo; el resultado se conserva. */
   eliminarImagen(id: string): Observable<void> {
     return this.http.delete<void>(`${this.url}/${this.numeroDe(id)}/imagen`).pipe(
@@ -174,7 +193,8 @@ export class AnalisisService {
         tiempoProcesamientoMs: r.tiempoProcesamientoMs,
         imagenDisponible: true,
         imagenExpiraEn: r.imagenExpiraEn,
-        lateralidad: r.lateralidad
+        lateralidad: r.lateralidad,
+        hallazgos: r.hallazgos
       }),
       imagenOriginal,
       heatmap: `data:image/png;base64,${r.prediccion.heatmapBase64}`
@@ -203,7 +223,8 @@ export class AnalisisService {
         ? porcentajes.map((probabilidad, g) => ({ grado: g as GradoKL, probabilidad }))
         : [],
       modelo: r.modelo,
-      tiempoProcesamientoMs: r.tiempoProcesamientoMs
+      tiempoProcesamientoMs: r.tiempoProcesamientoMs,
+      hallazgos: r.hallazgos
     };
   }
 

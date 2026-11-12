@@ -92,7 +92,7 @@ public class HistorialAnalisisService {
                 expiraEn));
 
         return new ResultadoDTO(registro.getId(), prediccion, ahora, registro.getNombreArchivo(), tiempoMs,
-                expiraEn, lateralidad);
+                expiraEn, lateralidad, registro.getHallazgos());
     }
 
     @Transactional(readOnly = true)
@@ -131,6 +131,13 @@ public class HistorialAnalisisService {
                 .filter(i -> i.getExpiraEn().isAfter(LocalDateTime.now()))
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "La radiografía de este análisis ya no está disponible."));
+    }
+
+    /** Reemplaza los hallazgos radiograficos del analisis por el texto editado por el medico. */
+    @Transactional
+    public AnalisisResumenDTO actualizarHallazgos(Long id, String correoUsuario, String hallazgos) {
+        propio(id, correoUsuario).actualizarHallazgos(hallazgos.trim());
+        return obtener(id, correoUsuario);
     }
 
     /** El medico puede borrar la radiografia antes del plazo; el registro se conserva. */

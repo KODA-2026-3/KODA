@@ -56,6 +56,10 @@ public class MetadatoAnalisis {
     @Column(name = "lateralidad")
     private Lateralidad lateralidad;
 
+    /** Nulos en los analisis anteriores a V8. */
+    @Column(name = "hallazgos", length = 2000)
+    private String hallazgos;
+
     protected MetadatoAnalisis() {
         // requerido por JPA
     }
@@ -86,10 +90,20 @@ public class MetadatoAnalisis {
         this(usuarioId, nombreArchivo, gradoKL, confianza, probabilidades, tiempoProcesamientoMs, modelo,
                 fechaCreacion);
         this.lateralidad = lateralidad;
+        this.hallazgos = HallazgosPredeterminados.para(gradoKL);
     }
 
     public Lateralidad getLateralidad() {
         return lateralidad;
+    }
+
+    /** Los guardados, o el texto predeterminado del grado si el analisis es anterior a V8. */
+    public String getHallazgos() {
+        return hallazgos != null ? hallazgos : HallazgosPredeterminados.para(gradoKL);
+    }
+
+    public void actualizarHallazgos(String hallazgos) {
+        this.hallazgos = hallazgos;
     }
 
     public Long getId() {

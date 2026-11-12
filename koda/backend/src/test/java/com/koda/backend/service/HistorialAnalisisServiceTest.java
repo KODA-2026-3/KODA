@@ -60,6 +60,12 @@ class HistorialAnalisisServiceTest {
         assertThat(resumen.probabilidades()).containsExactly(0.0, 0.05, 0.1, 0.8, 0.05);
         assertThat(resultado.lateralidad()).isEqualTo(Lateralidad.DERECHA);
         assertThat(resumen.lateralidad()).isEqualTo(Lateralidad.DERECHA);
+        assertThat(resultado.hallazgos()).startsWith("Múltiples osteofitos moderados");
+        assertThat(resumen.hallazgos()).isEqualTo(resultado.hallazgos());
+
+        historial.actualizarHallazgos(resultado.analisisId(), MEDICO, "  Hallazgos revisados por el médico.  ");
+        assertThat(historial.obtener(resultado.analisisId(), MEDICO).hallazgos())
+                .isEqualTo("Hallazgos revisados por el médico.");
         assertThat(historial.imagen(resultado.analisisId(), MEDICO).getHeatmap()).isEqualTo(heatmap());
         assertThat(historial.listar(MEDICO)).extracting(AnalisisResumenDTO::analisisId)
                 .contains(resultado.analisisId());

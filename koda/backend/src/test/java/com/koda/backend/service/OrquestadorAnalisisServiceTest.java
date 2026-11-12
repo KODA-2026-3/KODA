@@ -83,7 +83,8 @@ class OrquestadorAnalisisServiceTest {
                 "radiografia_rodilla.png",
                 150L,
                 ahora.plusDays(7),
-                Lateralidad.IZQUIERDA);
+                Lateralidad.IZQUIERDA,
+                "Texto del grado 2");
         when(historial.registrar(eq("mgarcia@hospital.org"), any(ImagenPreprocesada.class), eq(Lateralidad.IZQUIERDA),
                 eq(prediccionDTO), anyLong()))
                 .thenReturn(esperado);

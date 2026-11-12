@@ -37,6 +37,8 @@ export interface Analisis {
   distribucion: DistribucionGrado[];
   /** Clasificador que produjo el resultado. */
   modelo: string;
+  /** Hallazgos radiograficos: el texto del grado predicho, editable por el medico. */
+  hallazgos: string;
   tiempoProcesamientoMs?: number;
 }
 

@@ -25,7 +25,8 @@ public record AnalisisResumenDTO(
         long tiempoProcesamientoMs,
         boolean imagenDisponible,
         LocalDateTime imagenExpiraEn,
-        Lateralidad lateralidad) {
+        Lateralidad lateralidad,
+        String hallazgos) {
 
     public static AnalisisResumenDTO desde(MetadatoAnalisis registro, LocalDateTime imagenExpiraEn) {
         return new AnalisisResumenDTO(
@@ -39,6 +40,7 @@ public record AnalisisResumenDTO(
                 registro.getTiempoProcesamientoMs(),
                 imagenExpiraEn != null,
                 imagenExpiraEn,
-                registro.getLateralidad());
+                registro.getLateralidad(),
+                registro.getHallazgos());
     }
 }
