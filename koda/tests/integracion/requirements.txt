@@ -1,0 +1,5 @@
+pytest>=8
+httpx>=0.27
+psycopg[binary]>=3.2
+pillow>=10
+kagglehub>=0.3
