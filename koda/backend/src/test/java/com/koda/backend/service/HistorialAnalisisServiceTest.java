@@ -15,9 +15,12 @@ import java.util.zip.CRC32;
 
 import javax.imageio.ImageIO;
 
+import jakarta.persistence.EntityManager;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +50,12 @@ class HistorialAnalisisServiceTest {
 
     @Autowired
     private RepositorioAnalisis registros;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     void registraElAnalisisConSuImagenPorSieteDias() throws Exception {
@@ -99,6 +108,29 @@ class HistorialAnalisisServiceTest {
         assertThat(resumen.probabilidades()).hasSize(5);
         assertThat(registros.existsById(id)).isTrue();
         assertThatThrownBy(() -> historial.imagen(id, MEDICO)).isInstanceOf(RecursoNoEncontradoException.class);
+    }
+
+    @Test
+    void unAnalisisDeMasDeSieteDiasConservaElRegistroPeroNoEntregaLaImagen() throws Exception {
+        Long id = registrar().analisisId();
+        // La imagen tiene id asignado y su INSERT espera al flush: sin esto, clear() la descartaria.
+        entityManager.flush();
+        assertThat(historial.obtener(id, MEDICO).imagenDisponible()).isTrue();
+        // Solo cambia la fecha del analisis; expira_en de la imagen sigue en el futuro.
+        jdbc.update("UPDATE metadatos_analisis SET fecha_creacion = fecha_creacion - INTERVAL '8' DAY WHERE id = ?",
+                id);
+        // El registro sigue en el contexto de JPA con la fecha anterior: se vuelve a leer de la base.
+        entityManager.clear();
+
+        AnalisisResumenDTO resumen = historial.obtener(id, MEDICO);
+        assertThat(resumen.imagenDisponible()).isFalse();
+        assertThat(resumen.imagenExpiraEn()).isNull();
+        assertThat(historial.listar(MEDICO)).filteredOn(a -> a.analisisId().equals(id))
+                .singleElement().satisfies(a -> assertThat(a.imagenDisponible()).isFalse());
+        assertThatThrownBy(() -> historial.imagen(id, MEDICO)).isInstanceOf(RecursoNoEncontradoException.class);
+
+        assertThat(historial.eliminarVencidas(LocalDateTime.now())).isPositive();
+        assertThat(registros.existsById(id)).isTrue();
     }
 
     @Test

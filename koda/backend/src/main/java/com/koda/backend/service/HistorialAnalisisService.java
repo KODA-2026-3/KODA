@@ -105,32 +105,45 @@ public class HistorialAnalisisService {
         LocalDateTime ahora = LocalDateTime.now();
         // La limpieza corre cada hora: una imagen ya vencida se muestra como no disponible
         // aunque todavia no se haya borrado.
-        Map<Long, LocalDateTime> vigentes = imagenes
+        Map<Long, LocalDateTime> guardadas = imagenes
                 .findByAnalisisIdIn(lista.stream().map(MetadatoAnalisis::getId).toList())
                 .stream()
-                .filter(v -> v.getExpiraEn().isAfter(ahora))
                 .collect(Collectors.toMap(RepositorioImagenAnalisis.Vencimiento::getAnalisisId,
                         RepositorioImagenAnalisis.Vencimiento::getExpiraEn));
-        return lista.stream().map(r -> AnalisisResumenDTO.desde(r, vigentes.get(r.getId()))).toList();
+        return lista.stream()
+                .map(r -> AnalisisResumenDTO.desde(r, vigenteHasta(r, guardadas.get(r.getId()), ahora)))
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public AnalisisResumenDTO obtener(Long id, String correoUsuario) {
         MetadatoAnalisis registro = propio(id, correoUsuario);
-        LocalDateTime expiraEn = imagenes.findById(id)
-                .map(ImagenAnalisis::getExpiraEn)
-                .filter(e -> e.isAfter(LocalDateTime.now()))
-                .orElse(null);
-        return AnalisisResumenDTO.desde(registro, expiraEn);
+        LocalDateTime expiraEn = imagenes.findById(id).map(ImagenAnalisis::getExpiraEn).orElse(null);
+        return AnalisisResumenDTO.desde(registro, vigenteHasta(registro, expiraEn, LocalDateTime.now()));
     }
 
     @Transactional(readOnly = true)
     public ImagenAnalisis imagen(Long id, String correoUsuario) {
-        propio(id, correoUsuario);
+        MetadatoAnalisis registro = propio(id, correoUsuario);
+        LocalDateTime ahora = LocalDateTime.now();
         return imagenes.findById(id)
-                .filter(i -> i.getExpiraEn().isAfter(LocalDateTime.now()))
+                .filter(i -> vigenteHasta(registro, i.getExpiraEn(), ahora) != null)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "La radiografía de este análisis ya no está disponible."));
+    }
+
+    /**
+     * Hasta cuando se puede ver la radiografia, o nulo si ya no. Vence en expira_en o al
+     * cumplirse el plazo de retencion desde la fecha del analisis, lo que ocurra primero:
+     * nunca se entrega la imagen de un analisis con mas de diasRetencion dias (RNF-04).
+     */
+    private LocalDateTime vigenteHasta(MetadatoAnalisis registro, LocalDateTime expiraEn, LocalDateTime ahora) {
+        if (expiraEn == null) {
+            return null;
+        }
+        LocalDateTime porFecha = registro.getFechaCreacion().plusDays(diasRetencion);
+        LocalDateTime vence = expiraEn.isBefore(porFecha) ? expiraEn : porFecha;
+        return vence.isAfter(ahora) ? vence : null;
     }
 
     /** Reemplaza los hallazgos radiograficos del analisis por el texto editado por el medico. */
@@ -162,7 +175,7 @@ public class HistorialAnalisisService {
 
     @Transactional
     public int eliminarVencidas(LocalDateTime ahora) {
-        return imagenes.eliminarVencidas(ahora);
+        return imagenes.eliminarVencidas(ahora, ahora.minusDays(diasRetencion));
     }
 
     private MetadatoAnalisis propio(Long id, String correoUsuario) {

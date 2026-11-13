@@ -25,6 +25,12 @@ public interface RepositorioImagenAnalisis extends JpaRepository<ImagenAnalisis,
     // El borrado masivo va directo a la base: sin limpiar el contexto, una imagen ya
     // cargada en la misma transaccion seguiria apareciendo como disponible.
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("delete from ImagenAnalisis i where i.expiraEn <= :ahora")
-    int eliminarVencidas(@Param("ahora") LocalDateTime ahora);
+    // Vence la que llego a su expira_en o la de un analisis con fecha anterior al limite
+    // del plazo de retencion, lo que ocurra primero.
+    @Query("""
+            delete from ImagenAnalisis i
+            where i.expiraEn <= :ahora
+               or i.analisisId in (select m.id from MetadatoAnalisis m where m.fechaCreacion <= :limite)
+            """)
+    int eliminarVencidas(@Param("ahora") LocalDateTime ahora, @Param("limite") LocalDateTime limite);
 }
