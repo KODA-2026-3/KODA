@@ -10,6 +10,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.koda.backend.model.Usuario;
+import com.koda.backend.repository.UsuarioRepository;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jws;
@@ -25,9 +28,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String PREFIJO = "Bearer ";
 
     private final JwtService jwtService;
+    private final UsuarioRepository usuarios;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, UsuarioRepository usuarios) {
         this.jwtService = jwtService;
+        this.usuarios = usuarios;
+    }
+
+    private boolean cuentaActiva(String correo) {
+        return usuarios.findByCorreoIgnoreCase(correo).map(Usuario::isActivo).orElse(false);
     }
 
     @Override
@@ -44,7 +53,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String rol = claims.get("rol", String.class);
                 String sujeto = claims.getSubject();
 
-                if (sujeto != null && !sujeto.isBlank() && rol != null && !rol.isBlank()) {
+                // El token sigue siendo valido tras desactivar o eliminar la cuenta:
+                // se comprueba en cada peticion para que el cambio tenga efecto inmediato.
+                if (sujeto != null && !sujeto.isBlank() && rol != null && !rol.isBlank()
+                        && cuentaActiva(sujeto)) {
                     var autoridades = List.of(new SimpleGrantedAuthority("ROLE_" + rol));
                     var autenticacion = new UsernamePasswordAuthenticationToken(sujeto, null, autoridades);
                     SecurityContextHolder.getContext().setAuthentication(autenticacion);

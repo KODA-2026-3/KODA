@@ -48,6 +48,10 @@ class ControladorAnalisisTest {
     @MockBean
     private JwtService jwtService;
 
+    // Lo usa JwtAuthenticationFilter para comprobar que la cuenta siga activa.
+    @MockBean
+    private com.koda.backend.repository.UsuarioRepository usuarioRepository;
+
     @Test
     @DisplayName("POST /predict debe procesar la radiografía y retornar ResultadoDTO")
     void analizar_exitoso_retorna200() throws Exception {

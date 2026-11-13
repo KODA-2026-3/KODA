@@ -31,7 +31,7 @@ const POR_PAGINA = 6;
       </div>
 
       <!-- Indicadores -->
-      <div class="mt-6 grid gap-4 sm:max-w-xs">
+      <div class="mt-6 grid gap-4 sm:max-w-xl sm:grid-cols-2">
         @for (kpi of indicadores(); track kpi.etiqueta) {
           <div class="card p-5">
             <p class="section-title">{{ kpi.etiqueta }}</p>
@@ -74,7 +74,7 @@ const POR_PAGINA = 6;
       <!-- Tabla -->
       <div class="card mt-6 overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[760px] text-left">
+          <table class="w-full min-w-[860px] text-left">
             <caption class="sr-only">
               Cuentas de médico registradas
             </caption>
@@ -84,6 +84,7 @@ const POR_PAGINA = 6;
                 <th scope="col" class="px-5 py-3.5 font-bold">Usuario</th>
                 <th scope="col" class="px-5 py-3.5 font-bold">Correo</th>
                 <th scope="col" class="px-5 py-3.5 font-bold">Último Acceso</th>
+                <th scope="col" class="px-5 py-3.5 font-bold">Estado</th>
                 <th scope="col" class="px-5 py-3.5 font-bold">Acciones</th>
               </tr>
             </thead>
@@ -105,7 +106,42 @@ const POR_PAGINA = 6;
                   <td class="px-5 py-4 text-sm text-slate-600">{{ m.correo }}</td>
                   <td class="px-5 py-4 text-sm text-slate-600">{{ m.ultimoAcceso | tiempoRelativo }}</td>
                   <td class="px-5 py-4">
+                    @if (m.activo) {
+                      <span
+                        class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700"
+                        >Activo</span
+                      >
+                    } @else {
+                      <span
+                        class="inline-flex rounded-full bg-slate-200 px-2.5 py-1 text-xs font-bold text-slate-600"
+                        >Desactivado</span
+                      >
+                    }
+                  </td>
+                  <td class="px-5 py-4">
                     <span class="flex items-center gap-3">
+                      @if (m.activo) {
+                        <button
+                          type="button"
+                          class="text-amber-600 hover:text-amber-800"
+                          [attr.aria-label]="'Desactivar la cuenta de ' + m.nombre"
+                          title="Desactivar cuenta"
+                          (click)="porDesactivar.set(m)"
+                        >
+                          <app-icon name="lock" [size]="18" />
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
+                          [attr.aria-label]="'Reactivar la cuenta de ' + m.nombre"
+                          title="Reactivar cuenta"
+                          [disabled]="procesando() === m.id"
+                          (click)="cambiarEstado(m, true)"
+                        >
+                          <app-icon name="shield-check" [size]="18" />
+                        </button>
+                      }
                       <a
                         [routerLink]="['/admin/medicos', m.id, 'editar']"
                         class="text-slate-500 hover:text-navy-700"
@@ -126,7 +162,7 @@ const POR_PAGINA = 6;
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="px-5 py-16 text-center text-sm text-slate-500">
+                  <td colspan="6" class="px-5 py-16 text-center text-sm text-slate-500">
                     @if (cargando()) {
                       Cargando cuentas…
                     } @else if (busqueda()) {
@@ -187,6 +223,37 @@ const POR_PAGINA = 6;
       </div>
     </div>
 
+    <!-- Confirmación de desactivación -->
+    <app-modal
+      [abierto]="!!porDesactivar()"
+      etiqueta="Confirmar desactivación"
+      (cerrar)="porDesactivar.set(null)"
+    >
+      <span
+        class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600"
+      >
+        <app-icon name="lock" [size]="28" />
+      </span>
+      <h2 class="text-2xl font-extrabold text-navy-950">Desactivar cuenta</h2>
+      <p class="mt-3 text-sm leading-relaxed text-slate-600">
+        <strong>{{ porDesactivar()?.nombre }}</strong> no podrá iniciar sesión y su sesión abierta
+        dejará de funcionar. La cuenta y sus análisis se conservan, y puede reactivarla cuando quiera.
+      </p>
+      <div class="mt-6 grid gap-3 sm:grid-cols-2">
+        <button type="button" class="btn-secondary py-3" (click)="porDesactivar.set(null)">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn bg-amber-600 py-3 text-white hover:bg-amber-700 disabled:opacity-50"
+          [disabled]="!!procesando()"
+          (click)="desactivar()"
+        >
+          Desactivar cuenta
+        </button>
+      </div>
+    </app-modal>
+
     <!-- Confirmación de eliminación -->
     <app-modal [abierto]="!!porEliminar()" etiqueta="Confirmar eliminación" (cerrar)="porEliminar.set(null)">
       <span
@@ -222,12 +289,20 @@ export class MedicosComponent implements OnInit {
   readonly busqueda = signal('');
   readonly paginaActual = signal(1);
   readonly porEliminar = signal<Medico | null>(null);
+  readonly porDesactivar = signal<Medico | null>(null);
+  /** Id de la cuenta cuyo estado se está cambiando, para evitar dobles clics. */
+  readonly procesando = signal<string | null>(null);
 
   readonly indicadores = computed(() => [
     {
       etiqueta: 'Médicos registrados',
       valor: this.servicio.totalRegistrados(),
       detalle: 'Cuentas totales'
+    },
+    {
+      etiqueta: 'Médicos activos',
+      valor: this.servicio.totalActivos(),
+      detalle: 'Pueden iniciar sesión'
     }
   ]);
 
@@ -291,6 +366,29 @@ export class MedicosComponent implements OnInit {
 
   irA(pagina: number): void {
     this.paginaActual.set(Math.min(Math.max(1, pagina), this.totalPaginas()));
+  }
+
+  desactivar(): void {
+    const medico = this.porDesactivar();
+    if (medico) {
+      this.cambiarEstado(medico, false);
+    }
+  }
+
+  cambiarEstado(medico: Medico, activo: boolean): void {
+    this.procesando.set(medico.id);
+    this.error.set(null);
+    this.servicio.cambiarEstado(medico.id, activo).subscribe({
+      next: () => {
+        this.procesando.set(null);
+        this.porDesactivar.set(null);
+      },
+      error: (e: Error) => {
+        this.procesando.set(null);
+        this.porDesactivar.set(null);
+        this.error.set(e.message);
+      }
+    });
   }
 
   confirmarEliminacion(medico: Medico): void {
