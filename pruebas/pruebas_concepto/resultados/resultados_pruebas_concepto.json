@@ -1,0 +1,561 @@
+{
+  "fecha": "2026-11-12T19:41:45.873350",
+  "pruebas": [
+    {
+      "codigo": "3.1.1",
+      "nombre": "Registro de usuarios (con correo de bienvenida)",
+      "estado": "PASA (con verificación manual pendiente)",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "POST /medicos con datos válidos responde 201",
+          "estado": "OK",
+          "detalle": "HTTP 201"
+        },
+        {
+          "descripcion": "La respuesta no incluye la contraseña",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El nuevo médico inicia sesión con la contraseña temporal",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Un correo repetido se rechaza con 409",
+          "estado": "OK",
+          "detalle": "HTTP 409 «Ya existe una cuenta con ese correo electrónico.»"
+        },
+        {
+          "descripcion": "Campos obligatorios vacíos se rechazan con 400",
+          "estado": "OK",
+          "detalle": "HTTP 400 «usuario: must not be blank»"
+        },
+        {
+          "descripcion": "RF-26: revisar la bandeja de ardila20120079@gmail.com — asunto «KODA: su cuenta fue creada», con correo, contraseña temporal, enlace …/login e instrucciones para restablecer",
+          "estado": "MANUAL",
+          "detalle": "si MAIL_HOST está vacío: verificar en el log del backend «No se enviaron las credenciales» y que la contraseña NO aparezca"
+        },
+        {
+          "descripcion": "RF-26: el intento con correo repetido (409) NO debe generar un segundo correo",
+          "estado": "MANUAL",
+          "detalle": ""
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.2",
+      "nombre": "Login y autenticación",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "Login de médico responde 200 con token",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "La respuesta del médico no expone la contraseña",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Login de administrador responde 200 con token",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "La respuesta del administrador no expone la contraseña",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Credenciales inválidas → 401 con mensaje genérico",
+          "estado": "OK",
+          "detalle": "HTTP 401 «Las credenciales ingresadas no son válidas. Intente nuevamente.»"
+        },
+        {
+          "descripcion": "Solicitud sin token → 401",
+          "estado": "OK",
+          "detalle": "HTTP 401"
+        },
+        {
+          "descripcion": "El médico no accede a /medicos → 403",
+          "estado": "OK",
+          "detalle": "HTTP 403"
+        },
+        {
+          "descripcion": "El administrador no puede analizar → 403",
+          "estado": "OK",
+          "detalle": "HTTP 403"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.3",
+      "nombre": "Clasificación de radiografías (con lateralidad y hallazgos)",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "POST /predict con imagen válida y lateralidad=DERECHA responde 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Grado KL entre 0 y 4",
+          "estado": "OK",
+          "detalle": "grado 4"
+        },
+        {
+          "descripcion": "5 probabilidades que suman ≈ 1",
+          "estado": "OK",
+          "detalle": "0.000, 0.000, 0.000, 0.000, 1.000"
+        },
+        {
+          "descripcion": "El grado es el de mayor probabilidad",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Confianza entre 0 y 1",
+          "estado": "OK",
+          "detalle": "100.0 %"
+        },
+        {
+          "descripcion": "Tiempo de respuesta < 30 s",
+          "estado": "OK",
+          "detalle": "1.01 s (backend: 945 ms), modelo diko_stage2"
+        },
+        {
+          "descripcion": "RF-24: la respuesta trae lateralidad=DERECHA",
+          "estado": "OK",
+          "detalle": "DERECHA"
+        },
+        {
+          "descripcion": "RF-25: hallazgos predeterminados del grado predicho",
+          "estado": "OK",
+          "detalle": "Osteofitos grandes, marcado estrechamiento del espacio artic…"
+        },
+        {
+          "descripcion": "Sin lateralidad → 400 con mensaje claro",
+          "estado": "OK",
+          "detalle": "HTTP 400 «Indique si la radiografía es de la rodilla izquierda o derecha.»"
+        },
+        {
+          "descripcion": "lateralidad=CENTRO → 400",
+          "estado": "OK",
+          "detalle": "HTTP 400 «Indique si la radiografía es de la rodilla izquierda o derecha.»"
+        },
+        {
+          "descripcion": "PDF con extensión .png → error con mensaje en español",
+          "estado": "OK",
+          "detalle": "HTTP 422 «El formato del archivo no es compatible. Solo se aceptan imágenes JPEG o PNG.»"
+        },
+        {
+          "descripcion": "Imagen dañada → error con mensaje en español",
+          "estado": "OK",
+          "detalle": "HTTP 422 «El archivo no es una imagen válida o está dañado.»"
+        },
+        {
+          "descripcion": "Imagen en negro → error con mensaje en español",
+          "estado": "OK",
+          "detalle": "HTTP 422 «La imagen no contiene información suficiente para el análisis (parece estar en blanco, en negro o vacía).»"
+        },
+        {
+          "descripcion": "Archivo de 10,5 MB → error con mensaje en español",
+          "estado": "OK",
+          "detalle": "HTTP 422 «El archivo excede el tamaño máximo permitido (10 MB). Por favor, seleccione un archivo más pequeño.»"
+        },
+        {
+          "descripcion": "Tras los errores, el sistema sigue clasificando (200, lateralidad IZQUIERDA)",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.4",
+      "nombre": "Generación de mapa de calor",
+      "estado": "PASA (con verificación manual pendiente)",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "Existe un análisis de 3.1.3",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "heatmapBase64 es un PNG válido",
+          "estado": "OK",
+          "detalle": "72 KB"
+        },
+        {
+          "descripcion": "Abrir el mapa de calor y confirmar que resalta la articulación",
+          "estado": "MANUAL",
+          "detalle": "resultados\\heatmap_analisis_30.png"
+        },
+        {
+          "descripcion": "La predicción trae grado y probabilidades junto al mapa",
+          "estado": "OK",
+          "detalle": ""
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.5",
+      "nombre": "Recuperación de registros",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "GET /analisis responde 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "La lista no está vacía",
+          "estado": "OK",
+          "detalle": "31 análisis"
+        },
+        {
+          "descripcion": "Ordenada del más reciente al más antiguo",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Cada registro trae los campos esperados (incluye lateralidad y hallazgos)",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El análisis de 3.1.3 aparece con su rodilla",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Los análisis anteriores a V7 (sin rodilla) traen hallazgos predeterminados",
+          "estado": "OK",
+          "detalle": "23 sin rodilla"
+        },
+        {
+          "descripcion": "Otro médico no ve estos análisis en su historial",
+          "estado": "OK",
+          "detalle": ""
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.6",
+      "nombre": "Recuperación de registro con mapa de calor",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "Existe un análisis de 3.1.3",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "GET /analisis/30 responde 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Trae fecha, archivo, grado, probabilidades y modelo",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "RF-24/RF-25: trae rodilla y hallazgos",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "GET /analisis/30/imagen → 200 con imagen",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "/imagen sin caché (Cache-Control: no-store)",
+          "estado": "OK",
+          "detalle": "no-store"
+        },
+        {
+          "descripcion": "GET /analisis/30/heatmap → 200 con imagen",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "/heatmap sin caché (Cache-Control: no-store)",
+          "estado": "OK",
+          "detalle": "no-store"
+        },
+        {
+          "descripcion": "La radiografía pedida por otro médico → 404",
+          "estado": "OK",
+          "detalle": "HTTP 404 «No se encontró el análisis.»"
+        },
+        {
+          "descripcion": "La radiografía sin sesión → 401",
+          "estado": "OK",
+          "detalle": "HTTP 401"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.7",
+      "nombre": "Eliminación de la radiografía",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "Existe un análisis de prueba para eliminar",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Otro médico no puede eliminarla → 404",
+          "estado": "OK",
+          "detalle": "HTTP 404 «No se encontró el análisis.»"
+        },
+        {
+          "descripcion": "DELETE /analisis/31/imagen → 204",
+          "estado": "OK",
+          "detalle": "HTTP 204"
+        },
+        {
+          "descripcion": "La imagen ya no se entrega → 404",
+          "estado": "OK",
+          "detalle": "HTTP 404 «La radiografía de este análisis ya no está disponible.»"
+        },
+        {
+          "descripcion": "El registro se conserva (200, imagenDisponible=false)",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.8",
+      "nombre": "Consulta de estadísticas",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "GET /estadisticas/personales (médico) → 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Trae total, hoy, semana, confianza promedio, distribución KL y por día",
+          "estado": "OK",
+          "detalle": "total 31, hoy 6"
+        },
+        {
+          "descripcion": "Cuenta los análisis de esta ejecución (hoy ≥ 2)",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "GET /estadisticas (administrador) → 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Trae médicos activos y totales globales",
+          "estado": "OK",
+          "detalle": "total 31, médicos activos 2"
+        },
+        {
+          "descripcion": "El médico no accede a las estadísticas globales → 403",
+          "estado": "OK",
+          "detalle": "HTTP 403"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.9",
+      "nombre": "Recuperación de contraseña",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "Existe el médico de prueba de 3.1.1",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "POST /auth/recuperacion → 204",
+          "estado": "OK",
+          "detalle": "HTTP 204"
+        },
+        {
+          "descripcion": "Un correo desconocido recibe la misma respuesta (204)",
+          "estado": "OK",
+          "detalle": "HTTP 204"
+        },
+        {
+          "descripcion": "POST /auth/recuperacion/restablecer → 204",
+          "estado": "OK",
+          "detalle": "HTTP 204"
+        },
+        {
+          "descripcion": "Inicia sesión con la nueva contraseña",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "El mismo código no se puede usar dos veces → 400",
+          "estado": "OK",
+          "detalle": "HTTP 400 «El código es incorrecto o venció. Verifíquelo o solicite uno nuevo.»"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.10",
+      "nombre": "Exportar resultado en PDF",
+      "estado": "PASA (con verificación manual pendiente)",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "Existe un análisis de 3.1.3",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Abrir el resultado como mgarcia@hospital.org y pulsar Descargar reporte",
+          "estado": "MANUAL",
+          "detalle": "http://localhost:4200/app/resultado/30"
+        },
+        {
+          "descripcion": "El PDF contiene: datos del análisis (fecha, archivo, modelo)",
+          "estado": "MANUAL",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El PDF contiene: fila «Rodilla: Derecha» (RF-24)",
+          "estado": "MANUAL",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El PDF contiene: radiografía original con el contraste elegido",
+          "estado": "MANUAL",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El PDF contiene: mapa de calor",
+          "estado": "MANUAL",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El PDF contiene: grado KL y confianza",
+          "estado": "MANUAL",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El PDF contiene: sección «Hallazgos radiográficos» con el texto que se ve en pantalla, aunque no se haya guardado (RF-25)",
+          "estado": "MANUAL",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El PDF contiene: aviso de limitación clínica (RF-16)",
+          "estado": "MANUAL",
+          "detalle": ""
+        },
+        {
+          "descripcion": "El PDF contiene: YA NO aparece la distribución de probabilidades por grado",
+          "estado": "MANUAL",
+          "detalle": ""
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.11",
+      "nombre": "Estado del sistema",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "GET /api/actuator/health → 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Estado general UP",
+          "estado": "OK",
+          "detalle": "UP"
+        },
+        {
+          "descripcion": "Módulo de IA UP con modelo informado",
+          "estado": "OK",
+          "detalle": "{\"url\": \"http://inference:5000\", \"modelo\": \"diko_stage2\"}"
+        },
+        {
+          "descripcion": "GET /health del servicio de inferencia → 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Modelo cargado diko_stage2",
+          "estado": "OK",
+          "detalle": "diko_stage2"
+        }
+      ]
+    },
+    {
+      "codigo": "3.1.12",
+      "nombre": "Edición de hallazgos radiográficos (RF-25)",
+      "estado": "PASA",
+      "error": null,
+      "verificaciones": [
+        {
+          "descripcion": "Existe un análisis de 3.1.3",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "PUT /analisis/{id}/hallazgos → 200 con el texto sin espacios sobrantes",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "GET /analisis/{id} devuelve el texto guardado (incluye saltos de línea)",
+          "estado": "OK",
+          "detalle": ""
+        },
+        {
+          "descripcion": "Texto vacío → 400",
+          "estado": "OK",
+          "detalle": "HTTP 400 «hallazgos: must not be blank»"
+        },
+        {
+          "descripcion": "Texto de 2001 caracteres → 400",
+          "estado": "OK",
+          "detalle": "HTTP 400 «hallazgos: no debe superar los 2000 caracteres»"
+        },
+        {
+          "descripcion": "Texto de exactamente 2000 caracteres → 200",
+          "estado": "OK",
+          "detalle": "HTTP 200"
+        },
+        {
+          "descripcion": "Otro médico → 404",
+          "estado": "OK",
+          "detalle": "HTTP 404 «No se encontró el análisis.»"
+        },
+        {
+          "descripcion": "Sin token → 401",
+          "estado": "OK",
+          "detalle": "HTTP 401"
+        },
+        {
+          "descripcion": "Administrador → 403",
+          "estado": "OK",
+          "detalle": "HTTP 403"
+        }
+      ]
+    }
+  ]
+}
