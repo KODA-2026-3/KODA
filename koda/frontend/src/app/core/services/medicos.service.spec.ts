@@ -102,6 +102,25 @@ describe('MedicosService', () => {
     req.flush({ ...mockMedico, nombre: 'Dr. Pedro Gomez Modificado' });
   });
 
+  it('debe desactivar un médico y actualizar la señal interna', (done) => {
+    service.listar().subscribe();
+    httpMock.expectOne(baseUrl).flush([mockMedico]);
+    expect(service.totalActivos()).toBe(1);
+
+    service.cambiarEstado('u-1', false).subscribe((medico) => {
+      expect(medico.activo).toBeFalse();
+      expect(service.medicos()[0].activo).toBeFalse();
+      expect(service.totalActivos()).toBe(0);
+      expect(service.totalRegistrados()).toBe(1);
+      done();
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/u-1/estado`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ activo: false });
+    req.flush({ ...mockMedico, activo: false });
+  });
+
   it('debe eliminar un médico', (done) => {
     service.eliminar('u-1').subscribe(() => {
       expect(service.medicos().find((m) => m.id === 'u-1')).toBeUndefined();

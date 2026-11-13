@@ -196,4 +196,39 @@ class MedicoServiceTest {
 
         verify(repositorio).delete(medico);
     }
+
+    @Test
+    @DisplayName("Debe desactivar un médico sin eliminar su cuenta")
+    void cambiarEstado_desactivar_guardaInactivo() {
+        when(repositorio.findById(medico.getId())).thenReturn(Optional.of(medico));
+        when(repositorio.save(medico)).thenReturn(medico);
+
+        MedicoResponse response = servicio.cambiarEstado(medico.getId(), false);
+
+        assertThat(response.activo()).isFalse();
+        assertThat(medico.isActivo()).isFalse();
+        verify(repositorio).save(medico);
+        verify(repositorio, never()).delete(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Debe reactivar un médico desactivado")
+    void cambiarEstado_reactivar_guardaActivo() {
+        medico.setActivo(false);
+        when(repositorio.findById(medico.getId())).thenReturn(Optional.of(medico));
+        when(repositorio.save(medico)).thenReturn(medico);
+
+        assertThat(servicio.cambiarEstado(medico.getId(), true).activo()).isTrue();
+    }
+
+    @Test
+    @DisplayName("No debe permitir desactivar una cuenta de administrador")
+    void cambiarEstado_usuarioAdmin_lanzaRecursoNoEncontradoException() {
+        Usuario admin = new Usuario("Admin", "admin@hospital.org", "admin", "x", Rol.ADMIN, null);
+        when(repositorio.findById("admin-id")).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> servicio.cambiarEstado("admin-id", false))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+        verify(repositorio, never()).save(any(Usuario.class));
+    }
 }

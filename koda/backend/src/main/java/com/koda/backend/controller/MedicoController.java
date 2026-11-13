@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.koda.backend.dto.ActualizarMedicoRequest;
+import com.koda.backend.dto.CambiarEstadoMedicoRequest;
 import com.koda.backend.dto.CrearMedicoRequest;
 import com.koda.backend.dto.MedicoResponse;
 import com.koda.backend.service.MedicoService;
@@ -50,6 +52,13 @@ public class MedicoController {
     public MedicoResponse actualizar(@PathVariable String id,
                                      @Valid @RequestBody ActualizarMedicoRequest solicitud) {
         return servicio.actualizar(id, solicitud);
+    }
+
+    /** Desactiva o reactiva la cuenta; desactivada, no puede iniciar sesion ni usar su sesion abierta. */
+    @PatchMapping("/{id}/estado")
+    public MedicoResponse cambiarEstado(@PathVariable String id,
+                                        @Valid @RequestBody CambiarEstadoMedicoRequest solicitud) {
+        return servicio.cambiarEstado(id, solicitud.activo());
     }
 
     @DeleteMapping("/{id}")

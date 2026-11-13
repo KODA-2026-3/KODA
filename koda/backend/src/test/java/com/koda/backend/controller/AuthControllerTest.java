@@ -46,6 +46,10 @@ class AuthControllerTest {
     @MockBean
     private JwtService jwtService;
 
+    // Lo usa JwtAuthenticationFilter para comprobar que la cuenta siga activa.
+    @MockBean
+    private com.koda.backend.repository.UsuarioRepository usuarioRepository;
+
     @Test
     @DisplayName("POST /auth/recuperacion responde 204 y delega en el servicio")
     void solicitarRecuperacion_correoValido_retorna204() throws Exception {

@@ -34,6 +34,10 @@ class ControladorEstadisticasTest {
     @MockBean
     private JwtService jwtService;
 
+    // Lo usa JwtAuthenticationFilter para comprobar que la cuenta siga activa.
+    @MockBean
+    private com.koda.backend.repository.UsuarioRepository usuarioRepository;
+
     @Test
     @DisplayName("GET /estadisticas debe retornar 200 OK con el DTO de estadísticas")
     void obtener_retorna200() throws Exception {

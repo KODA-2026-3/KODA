@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,6 +47,10 @@ class MedicoControllerTest {
 
     @MockBean
     private JwtService jwtService;
+
+    // Lo usa JwtAuthenticationFilter para comprobar que la cuenta siga activa.
+    @MockBean
+    private com.koda.backend.repository.UsuarioRepository usuarioRepository;
 
     @Test
     @DisplayName("GET /medicos debe listar médicos correctamente")
@@ -133,6 +138,42 @@ class MedicoControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Dr. Pedro Modificado"));
+    }
+
+    @Test
+    @DisplayName("PATCH /medicos/{id}/estado debe desactivar el médico")
+    void cambiarEstado_desactivar_retorna200() throws Exception {
+        MedicoResponse res = new MedicoResponse(
+                "u-1", "Dra. Maria Garcia", "mgarcia@hospital.org", "mgarcia", null, "Hospital", false, null);
+        when(servicio.cambiarEstado("u-1", false)).thenReturn(res);
+
+        mockMvc.perform(patch("/medicos/u-1/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"activo\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activo").value(false));
+    }
+
+    @Test
+    @DisplayName("PATCH /medicos/{id}/estado sin el campo activo debe retornar 400")
+    void cambiarEstado_sinActivo_retorna400() throws Exception {
+        mockMvc.perform(patch("/medicos/u-1/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").value("activo: es obligatorio"));
+    }
+
+    @Test
+    @DisplayName("PATCH /medicos/{id}/estado de un médico inexistente debe retornar 404")
+    void cambiarEstado_inexistente_retorna404() throws Exception {
+        when(servicio.cambiarEstado("no-existe", false))
+                .thenThrow(new RecursoNoEncontradoException("No existe una cuenta de médico con el identificador indicado."));
+
+        mockMvc.perform(patch("/medicos/no-existe/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"activo\":false}"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

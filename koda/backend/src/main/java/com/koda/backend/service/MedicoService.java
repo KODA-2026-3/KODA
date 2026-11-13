@@ -73,6 +73,17 @@ public class MedicoService {
         return MedicoResponse.desde(repositorio.save(medico));
     }
 
+    /**
+     * Desactivar conserva la cuenta y sus analisis, a diferencia de eliminar. El
+     * login ya rechaza las cuentas inactivas y el filtro JWT invalida su sesion abierta.
+     */
+    @Transactional
+    public MedicoResponse cambiarEstado(String id, boolean activo) {
+        Usuario medico = buscarMedico(id);
+        medico.setActivo(activo);
+        return MedicoResponse.desde(repositorio.save(medico));
+    }
+
     @Transactional
     public void eliminar(String id) {
         repositorio.delete(buscarMedico(id));

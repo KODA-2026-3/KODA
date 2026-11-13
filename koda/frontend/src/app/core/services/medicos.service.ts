@@ -19,6 +19,7 @@ export class MedicosService {
 
   readonly medicos = this._medicos.asReadonly();
   readonly totalRegistrados = computed(() => this._medicos().length);
+  readonly totalActivos = computed(() => this._medicos().filter((m) => m.activo).length);
 
   listar(): Observable<Medico[]> {
     return this.http.get<Medico[]>(this.url).pipe(
@@ -42,6 +43,16 @@ export class MedicosService {
 
   actualizar(id: string, datos: EdicionMedico): Observable<Medico> {
     return this.http.put<Medico>(`${this.url}/${id}`, datos).pipe(
+      tap((medico) =>
+        this._medicos.update((lista) => lista.map((m) => (m.id === id ? medico : m)))
+      ),
+      catchError((e: HttpErrorResponse) => throwError(() => this.aError(e)))
+    );
+  }
+
+  /** Desactiva (false) o reactiva (true) la cuenta sin eliminarla. */
+  cambiarEstado(id: string, activo: boolean): Observable<Medico> {
+    return this.http.patch<Medico>(`${this.url}/${id}/estado`, { activo }).pipe(
       tap((medico) =>
         this._medicos.update((lista) => lista.map((m) => (m.id === id ? medico : m)))
       ),
